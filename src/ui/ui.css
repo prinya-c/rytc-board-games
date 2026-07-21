@@ -9,6 +9,12 @@
   --paper: #FFFDF6;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Real visible-viewport height in px, kept in sync by main.js. Falls back
+     to 1vh so this still works before the first JS sync runs. Needed because
+     mobile browser chrome (address bar, and especially in-app webviews like
+     LINE) can draw its own toolbar over the bottom of the page without
+     shrinking `100vh`, which otherwise clips fixed-position panel buttons. */
+  --vh: 1vh;
   font-family: 'Noto Sans Thai', 'Sarabun', system-ui, -apple-system, sans-serif;
 }
 
@@ -103,7 +109,7 @@
   padding: 24px;
   width: 100%;
   max-width: 440px;
-  max-height: 90vh;
+  max-height: calc(var(--vh, 1vh) * 84);
   overflow-y: auto;
   color: var(--ink);
 }
@@ -305,7 +311,11 @@
 .mission-panel {
   max-width: 480px;
   padding: 0;
-  overflow: hidden;
+  /* Must stay scrollable (not `overflow: hidden`) — that shorthand was
+     clobbering the base .panel's overflow-y: auto and silently clipping
+     the continue button off the bottom of tall mission cards on mobile. */
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   border: 3px solid var(--zone-color, var(--path));
   box-shadow: 0 22px 50px rgba(0,0,0,0.32), 0 0 0 5px rgba(255,255,255,0.6) inset;
@@ -315,6 +325,7 @@
   width: 100%;
   aspect-ratio: 640 / 300;
   object-fit: cover;
+  border-radius: 21px 21px 0 0;
 }
 .mission-body { padding: 18px 22px 22px; }
 .mission-ribbon {
