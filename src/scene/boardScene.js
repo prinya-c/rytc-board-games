@@ -108,7 +108,12 @@ export function createBoardScene(container) {
 
   function trackTokenPosition(pos) {
     if (!followState) return;
-    controls.target.lerp(pos, 0.32);
+    // Gentle horizontal trailing (soft chase-cam) so the pan reads as smooth
+    // rather than snapping to the token; vertical is even gentler so the
+    // hop's little up-and-down arc doesn't make the camera bob with it.
+    controls.target.x += (pos.x - controls.target.x) * 0.14;
+    controls.target.z += (pos.z - controls.target.z) * 0.14;
+    controls.target.y += (pos.y - controls.target.y) * 0.05;
   }
 
   function endTokenFollow(cellId, { holdMs = 1100, duration = 500, onDone } = {}) {
