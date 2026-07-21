@@ -283,6 +283,24 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.14);
 }
 
+/* -------- audio toggle -------- */
+#audio-toggle {
+  position: fixed;
+  top: max(12px, var(--safe-top));
+  right: 12px;
+  z-index: 40;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 253, 246, 0.92);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  font-size: 19px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#audio-toggle:active { transform: scale(0.92); }
+
 /* -------- mission modal -------- */
 .mission-panel {
   max-width: 480px;

@@ -3,12 +3,14 @@ import './ui/ui.css';
 import { createBoardScene } from './scene/boardScene.js';
 import { renderSetupScreen } from './ui/setupScreen.js';
 import { startGame } from './game/gameController.js';
+import { primeAudioOnFirstGesture, isMuted, toggleMuted } from './audio/audioEngine.js';
 
 const app = document.querySelector('#app');
 app.innerHTML = `
   <div id="scene-container"></div>
   <div id="hud-root"></div>
   <div id="ui-root"></div>
+  <button id="audio-toggle" type="button" aria-label="เปิด/ปิดเสียง"></button>
 `;
 
 const sceneContainer = document.querySelector('#scene-container');
@@ -19,6 +21,21 @@ const uiRoot = document.querySelector('#ui-root');
 // traffic and all — as the backdrop behind the player setup screen, instead
 // of showing a blank page while players fill in their names.
 const scene = createBoardScene(sceneContainer);
+
+// Music/SFX are synthesized (no audio files); the ambient loop starts on the
+// player's very first tap/click anywhere, satisfying the browser's autoplay
+// policy without needing a dedicated "play music" button.
+primeAudioOnFirstGesture();
+
+const audioToggle = document.querySelector('#audio-toggle');
+function syncAudioToggle() {
+  audioToggle.textContent = isMuted() ? '🔇' : '🔊';
+}
+syncAudioToggle();
+audioToggle.addEventListener('click', () => {
+  toggleMuted();
+  syncAudioToggle();
+});
 
 renderSetupScreen(uiRoot, {
   onStart: (players) => {

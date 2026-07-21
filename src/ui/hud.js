@@ -1,3 +1,5 @@
+import { playPop } from '../audio/audioEngine.js';
+
 export function renderHud(root, { onRoll }) {
   root.innerHTML = `
     <div id="hud">
@@ -12,7 +14,10 @@ export function renderHud(root, { onRoll }) {
     <div class="zone-chip" id="zone-chip"></div>
   `;
 
-  root.querySelector('#roll-btn').addEventListener('click', () => onRoll());
+  root.querySelector('#roll-btn').addEventListener('click', () => {
+    playPop();
+    onRoll();
+  });
 
   function update({ player, canRoll, lastRoll, zoneLabel }) {
     const banner = root.querySelector('#turn-banner');

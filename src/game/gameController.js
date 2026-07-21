@@ -7,6 +7,7 @@ import { applyOption } from './scoring.js';
 import { renderHud } from '../ui/hud.js';
 import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
+import { playHop } from '../audio/audioEngine.js';
 
 export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: existingScene }) {
   const scene = existingScene ?? createBoardScene(sceneContainer);
@@ -62,6 +63,7 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: exi
     scene.beginTokenFollow();
     animateTokenMove(token, from, to, {
       onUpdate: (pos) => scene.trackTokenPosition(pos),
+      onHopLand: () => playHop(),
       onDone: () => {
         player.position = to;
         syncHud(steps);

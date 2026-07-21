@@ -1,5 +1,6 @@
 import { ZONES } from '../game/zones.js';
 import { renderSceneDataUrl } from './sceneArt.js';
+import { playPop, playChing } from '../audio/audioEngine.js';
 
 const TYPE_LABEL = {
   A: 'ค้นหาตัวเอง',
@@ -50,12 +51,14 @@ export function showMission(root, cell, { onResolve, player }) {
   if (cell.options) {
     root.querySelectorAll('.mission-option').forEach((btn) => {
       btn.addEventListener('click', () => {
+        playPop();
         const opt = cell.options[Number(btn.dataset.idx)];
         showFeedback(opt);
       });
     });
   } else {
     root.querySelector('#mission-continue').addEventListener('click', () => {
+      playChing();
       close();
       onResolve(null);
     });
@@ -86,6 +89,7 @@ export function showMission(root, cell, { onResolve, player }) {
       </div>
     `;
     dynamic.querySelector('#mission-continue').addEventListener('click', () => {
+      playChing();
       close();
       onResolve(opt);
     });

@@ -1,4 +1,5 @@
 import { computeTop3, computeProfile } from '../game/scoring.js';
+import { playChing } from '../audio/audioEngine.js';
 
 export function showPersonalResult(root, player, { onContinue, isLast }) {
   const top3 = computeTop3(player.score);
@@ -36,6 +37,7 @@ export function showPersonalResult(root, player, { onContinue, isLast }) {
   `;
 
   root.querySelector('#result-continue').addEventListener('click', () => {
+    playChing();
     root.innerHTML = '';
     onContinue();
   });
@@ -69,6 +71,7 @@ export function showFinalSummary(root, players, { onRestart }) {
   `;
 
   root.querySelector('#restart-btn').addEventListener('click', () => {
+    playChing();
     root.innerHTML = '';
     onRestart();
   });

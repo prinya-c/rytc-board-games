@@ -1,4 +1,5 @@
 import { ZONES, ZONE_ORDER } from '../game/zones.js';
+import { playTick, playChing } from '../audio/audioEngine.js';
 
 export const PLAYER_COLORS = ['#E4572E', '#3A6CF0', '#4E9E3E', '#F4B400', '#9B59B6', '#00B8A9'];
 
@@ -50,6 +51,7 @@ export function renderSetupScreen(root, { onStart }) {
     )).join('');
     countRow.querySelectorAll('.count-chip').forEach((chip) => {
       chip.addEventListener('click', () => {
+        playTick();
         count = Number(chip.dataset.count);
         const existing = players.slice(0, count);
         while (existing.length < count) {
@@ -86,6 +88,7 @@ export function renderSetupScreen(root, { onStart }) {
       dotsWrap.querySelectorAll('.color-dot').forEach((dot) => {
         dot.addEventListener('click', () => {
           if (dot.disabled) return;
+          playTick();
           players[Number(dotsWrap.dataset.idx)].color = dot.dataset.color;
           render();
         });
@@ -104,6 +107,7 @@ export function renderSetupScreen(root, { onStart }) {
       btn.dataset.bound = '1';
       btn.addEventListener('click', () => {
         if (btn.disabled) return;
+        playChing();
         onStart(players.map((p, i) => ({
           id: i,
           name: p.name.trim(),

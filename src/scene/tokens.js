@@ -114,7 +114,7 @@ export function placeTokenAtCell(token, cellId) {
   token.position.set(pos.x + ox, pos.y, pos.z + oz);
 }
 
-export function animateTokenMove(token, fromCell, toCell, { onDone, onUpdate } = {}) {
+export function animateTokenMove(token, fromCell, toCell, { onDone, onUpdate, onHopLand } = {}) {
   const steps = [];
   const dir = toCell > fromCell ? 1 : -1;
   for (let c = fromCell; c !== toCell; c += dir) steps.push(c + dir);
@@ -150,6 +150,7 @@ export function animateTokenMove(token, fromCell, toCell, { onDone, onUpdate } =
         requestAnimationFrame(tick);
       } else {
         token.position.y = baseY;
+        onHopLand?.();
         i += 1;
         if (i < steps.length) hop();
         else onDone?.();
