@@ -105,6 +105,7 @@ function startAmbient() {
   });
 
   scheduleTwinkle();
+  startBeat();
 }
 
 function scheduleTwinkle() {
@@ -138,9 +139,88 @@ function scheduleTwinkle() {
   twinkleTimer = setTimeout(playNote, 900);
 }
 
+// A soft plucked arpeggio + a light shaker flick, locked to a steady 92 BPM
+// 8th-note grid — this is what actually gives the ambient bed a beat, on top
+// of the sustained pad and the sparse melodic twinkle.
+const BEAT_BPM = 92;
+const STEP_SECONDS = 60 / BEAT_BPM / 2;
+const BEAT_PATTERN = [0, null, 1, null, 2, 1, null, null, 0, null, 2, null, 1, 2, null, null];
+let beatSchedulerId = null;
+let beatStepIndex = 0;
+let nextStepTime = 0;
+
+function scheduleBeatNote(time, chordIndex) {
+  const chordFreqs = [261.63, 329.63, 392.0]; // C4 E4 G4 — an octave above the pad
+  const freq = chordFreqs[chordIndex];
+
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, time);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 1500;
+
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, time);
+  g.gain.exponentialRampToValueAtTime(0.1, time + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
+
+  osc.connect(filter);
+  filter.connect(g);
+  g.connect(ambientGain);
+  osc.start(time);
+  osc.stop(time + 0.32);
+}
+
+function scheduleShaker(time, accent) {
+  const bufferSize = Math.floor(ctx.sampleRate * 0.045);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 4200;
+
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(accent ? 0.05 : 0.026, time);
+  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
+
+  noise.connect(filter);
+  filter.connect(g);
+  g.connect(ambientGain);
+  noise.start(time);
+}
+
+function startBeat() {
+  beatStepIndex = 0;
+  nextStepTime = ctx.currentTime + 0.1;
+  beatSchedulerId = setInterval(() => {
+    // schedule any steps that fall within the next ~120ms lookahead window
+    while (nextStepTime < ctx.currentTime + 0.12) {
+      const chordIndex = BEAT_PATTERN[beatStepIndex % BEAT_PATTERN.length];
+      if (chordIndex !== null) {
+        scheduleBeatNote(nextStepTime, chordIndex);
+        scheduleShaker(nextStepTime, beatStepIndex % 8 === 0);
+      }
+      beatStepIndex += 1;
+      nextStepTime += STEP_SECONDS;
+    }
+  }, 25);
+}
+
+function stopBeat() {
+  if (beatSchedulerId) clearInterval(beatSchedulerId);
+  beatSchedulerId = null;
+}
+
 export function stopAmbient() {
   ambientStarted = false;
   if (twinkleTimer) clearTimeout(twinkleTimer);
+  stopBeat();
   padVoices.forEach((v) => {
     try { v.stop(); } catch { /* already stopped */ }
   });
