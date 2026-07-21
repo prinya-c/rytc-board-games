@@ -1,5 +1,6 @@
 import './base.css';
 import './ui/ui.css';
+import { createBoardScene } from './scene/boardScene.js';
 import { renderSetupScreen } from './ui/setupScreen.js';
 import { startGame } from './game/gameController.js';
 
@@ -14,9 +15,14 @@ const sceneContainer = document.querySelector('#scene-container');
 const hudRoot = document.querySelector('#hud-root');
 const uiRoot = document.querySelector('#ui-root');
 
+// Build the 3D board immediately so it's already alive — buildings, balloons,
+// traffic and all — as the backdrop behind the player setup screen, instead
+// of showing a blank page while players fill in their names.
+const scene = createBoardScene(sceneContainer);
+
 renderSetupScreen(uiRoot, {
   onStart: (players) => {
     uiRoot.innerHTML = '';
-    startGame({ players, sceneContainer, uiRoot, hudRoot });
+    startGame({ players, scene, uiRoot, hudRoot });
   },
 });

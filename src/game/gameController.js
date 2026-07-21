@@ -8,8 +8,8 @@ import { renderHud } from '../ui/hud.js';
 import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
 
-export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
-  const scene = createBoardScene(sceneContainer);
+export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: existingScene }) {
+  const scene = existingScene ?? createBoardScene(sceneContainer);
   const dice = createDice();
   dice.position.set(0, 0.35, 2.4);
   scene.board.add(dice);
