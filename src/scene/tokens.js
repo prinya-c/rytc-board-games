@@ -299,9 +299,23 @@ export function animateTokenMove(token, fromCell, toCell, { onDone, onUpdate, on
     // actually keep up with it instead of snapping between cells.
     const duration = 420;
     const startTime = performance.now();
-    const hopHeight = 0.35;
+    const hopHeight = 0.16;
+
+    // Face the direction this hop actually travels in world space, instead
+    // of turning a fixed 90° every single hop — on a straight run of cells
+    // that's the same direction each time, so it only visibly turns where
+    // the board path itself turns (each row/column end).
     const startRotY = token.rotation.y;
-    const endRotY = startRotY + Math.PI * 0.5 * dir;
+    let endRotY = startRotY;
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    if (Math.abs(dx) > 1e-6 || Math.abs(dz) > 1e-6) {
+      const targetRotY = Math.atan2(dx, dz);
+      let delta = (targetRotY - startRotY) % (Math.PI * 2);
+      if (delta > Math.PI) delta -= Math.PI * 2;
+      if (delta < -Math.PI) delta += Math.PI * 2;
+      endRotY = startRotY + delta;
+    }
 
     function tick(now) {
       const t = Math.min(1, (now - startTime) / duration);
