@@ -1,0 +1,8 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+#app { position: fixed; inset: 0; }
+#scene-container { position: fixed; inset: 0; touch-action: none; }
+#scene-container canvas { display: block; }
+body {
+  font-family: 'Noto Sans Thai', 'Sarabun', system-ui, -apple-system, sans-serif;
+}
