@@ -11,6 +11,10 @@ const BOARD_EXTENT = GRID_MAX * CELL_SIZE;
 const TRAY_THICKNESS = 0.55;
 const TRAY_MARGIN = CELL_SIZE * 2.4;
 
+// Open floor radius inside the tile ring, safe for ambient traffic to loop
+// within without ever clipping into the tiles or the center buildings.
+export const ARENA_RADIUS = BOARD_EXTENT / 2 - CELL_SIZE * 0.65;
+
 export function gridToWorld(x, y) {
   const half = BOARD_EXTENT / 2;
   return { x: x * CELL_SIZE - half, z: y * CELL_SIZE - half };

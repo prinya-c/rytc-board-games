@@ -245,6 +245,44 @@ export function createLatticeTowerTexture() {
   return tex;
 }
 
+export function createBalloonTexture() {
+  const w = 256;
+  const h = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  const colors = ['#FF5A5F', '#FFC72C', '#2F5CFF', '#3FAE2A', '#FF8A3A', '#A24FE0', '#00A99D', '#EF3A5C'];
+  const stripes = colors.length;
+  const stripeW = w / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(i * stripeW, 0, stripeW, h);
+  }
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 3;
+  for (let i = 1; i < stripes; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * stripeW, 0);
+    ctx.lineTo(i * stripeW, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += 24) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 export function createFacadeTexture(color, rows = 5, cols = 4) {
   const s = 256;
   const { canvas, ctx } = ctx2d(s);

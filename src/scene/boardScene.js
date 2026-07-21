@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buildBoard, SCENERY_RADIUS } from './boardGeometry.js';
+import { buildBoard, SCENERY_RADIUS, ARENA_RADIUS } from './boardGeometry.js';
 import { createAnimatedScenery } from './animatedScenery.js';
 
 export function createBoardScene(container) {
@@ -48,7 +48,7 @@ export function createBoardScene(container) {
   const board = buildBoard();
   scene.add(board);
 
-  const scenery = createAnimatedScenery(SCENERY_RADIUS);
+  const scenery = createAnimatedScenery(ARENA_RADIUS, SCENERY_RADIUS);
   scene.add(scenery.group);
   const clock = new THREE.Clock();
 

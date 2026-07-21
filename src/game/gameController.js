@@ -11,7 +11,7 @@ import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
 export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
   const scene = createBoardScene(sceneContainer);
   const dice = createDice();
-  dice.position.set(0, 0.35, 3.2);
+  dice.position.set(0, 0.35, 2.4);
   scene.board.add(dice);
 
   const tokens = players.map((p, i) => {
