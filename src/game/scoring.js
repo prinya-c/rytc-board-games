@@ -15,13 +15,20 @@ export function boostTopCategory(scoreState, amount = 2) {
 }
 
 export function computeProfile(scoreState) {
-  const total = ZONE_ORDER.reduce((sum, key) => sum + (scoreState[key] || 0), 0) || 1;
+  // Some choices carry a negative score (a clearly wrong/harmful answer), so
+  // clamp each category at 0 for display — a "wrong pick" should never show
+  // up as a negative bar or skew another category's percentage.
+  const clamped = ZONE_ORDER.reduce((acc, key) => {
+    acc[key] = Math.max(0, scoreState[key] || 0);
+    return acc;
+  }, {});
+  const total = ZONE_ORDER.reduce((sum, key) => sum + clamped[key], 0) || 1;
   return ZONE_ORDER
     .map((key) => ({
       key,
       zone: ZONES[key],
-      value: scoreState[key] || 0,
-      percent: Math.round(((scoreState[key] || 0) / total) * 100),
+      value: clamped[key],
+      percent: Math.round((clamped[key] / total) * 100),
     }))
     .sort((a, b) => b.value - a.value);
 }

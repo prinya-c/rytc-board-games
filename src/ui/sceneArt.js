@@ -210,8 +210,9 @@ export function renderSceneDataUrl(cell, playerColor) {
     }
   }
 
-  // prop emoji, large, right side
-  const prop = PROPS[cell.zone] ?? { start: '🗺️', finish: '🏆' }[cell.type] ?? '❓';
+  // prop emoji, large, right side — a per-cell override takes priority so the
+  // art matches that cell's specific mission story, not just its zone.
+  const prop = cell.prop ?? PROPS[cell.zone] ?? { start: '🗺️', finish: '🏆' }[cell.type] ?? '❓';
   ctx.font = '150px "Noto Color Emoji", "Apple Color Emoji", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
