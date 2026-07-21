@@ -245,7 +245,7 @@ export function createLatticeTowerTexture() {
   return tex;
 }
 
-export function createBalloonTexture() {
+export function createBalloonTexture(colors = ['#FF5A5F', '#FFC72C', '#2F5CFF', '#3FAE2A', '#FF8A3A', '#A24FE0', '#00A99D', '#EF3A5C']) {
   const w = 256;
   const h = 256;
   const canvas = document.createElement('canvas');
@@ -253,7 +253,6 @@ export function createBalloonTexture() {
   canvas.height = h;
   const ctx = canvas.getContext('2d');
 
-  const colors = ['#FF5A5F', '#FFC72C', '#2F5CFF', '#3FAE2A', '#FF8A3A', '#A24FE0', '#00A99D', '#EF3A5C'];
   const stripes = colors.length;
   const stripeW = w / stripes;
   for (let i = 0; i < stripes; i++) {

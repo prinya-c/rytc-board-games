@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createBalloonTexture } from './textures.js';
 
-function buildCar(color) {
+// ---------------- Cars ----------------
+
+function buildSedan(color) {
   const group = new THREE.Group();
   const body = new THREE.Mesh(
     new RoundedBoxGeometry(0.38, 0.16, 0.19, 1, 0.04),
@@ -31,25 +33,132 @@ function buildCar(color) {
   return group;
 }
 
-function buildMotorcycle(color) {
+function buildVan(color) {
   const group = new THREE.Group();
   const body = new THREE.Mesh(
-    new RoundedBoxGeometry(0.26, 0.06, 0.06, 1, 0.02),
-    new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.2 }),
+    new RoundedBoxGeometry(0.34, 0.24, 0.2, 1, 0.045),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.4 }),
   );
-  body.position.y = 0.1;
+  body.position.y = 0.17;
+  body.castShadow = true;
   group.add(body);
 
-  const rider = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.036, 0.08, 4, 8),
-    new THREE.MeshStandardMaterial({ color: '#333333', roughness: 0.6 }),
+  const roofAccent = new THREE.Mesh(
+    new RoundedBoxGeometry(0.3, 0.045, 0.19, 1, 0.02),
+    new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.35 }),
   );
-  rider.position.set(0, 0.19, 0);
+  roofAccent.position.y = 0.3;
+  group.add(roofAccent);
+
+  const windshield = new THREE.Mesh(
+    new RoundedBoxGeometry(0.055, 0.13, 0.17, 1, 0.02),
+    new THREE.MeshStandardMaterial({ color: '#cfe8ff', roughness: 0.2, transparent: true, opacity: 0.85 }),
+  );
+  windshield.position.set(0.15, 0.23, 0);
+  group.add(windshield);
+
+  const wheelMat = new THREE.MeshStandardMaterial({ color: '#1e1e1e', roughness: 0.6 });
+  const wheelGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.06, 12);
+  [[0.12, 0.07, 0.11], [0.12, 0.07, -0.11], [-0.12, 0.07, 0.11], [-0.12, 0.07, -0.11]].forEach(([x, y, z]) => {
+    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, y, z);
+    group.add(wheel);
+  });
+
+  return group;
+}
+
+function buildSportsCar(color) {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(
+    new RoundedBoxGeometry(0.42, 0.1, 0.19, 1, 0.035),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.25, metalness: 0.4 }),
+  );
+  body.position.y = 0.09;
+  body.castShadow = true;
+  group.add(body);
+
+  const cabin = new THREE.Mesh(
+    new RoundedBoxGeometry(0.17, 0.07, 0.15, 1, 0.025),
+    new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.3, transparent: true, opacity: 0.85 }),
+  );
+  cabin.position.set(0.03, 0.15, 0);
+  group.add(cabin);
+
+  const spoiler = new THREE.Mesh(
+    new RoundedBoxGeometry(0.03, 0.05, 0.21, 1, 0.01),
+    new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.4 }),
+  );
+  spoiler.position.set(-0.2, 0.15, 0);
+  group.add(spoiler);
+
+  const wheelMat = new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.5 });
+  const wheelGeo = new THREE.CylinderGeometry(0.048, 0.048, 0.05, 12);
+  [[0.16, 0.048, 0.1], [0.16, 0.048, -0.1], [-0.15, 0.048, 0.1], [-0.15, 0.048, -0.1]].forEach(([x, y, z]) => {
+    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, y, z);
+    group.add(wheel);
+  });
+
+  return group;
+}
+
+// ---------------- Motorcycles ----------------
+
+function buildMotorcycle(color, accent = '#1a1a1a') {
+  const group = new THREE.Group();
+  const frameMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.25 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.5 });
+
+  const tank = new THREE.Mesh(new RoundedBoxGeometry(0.14, 0.06, 0.065, 1, 0.02), frameMat);
+  tank.position.set(0.02, 0.14, 0);
+  group.add(tank);
+
+  const seat = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.03, 0.055, 1, 0.014), darkMat);
+  seat.position.set(-0.07, 0.16, 0);
+  group.add(seat);
+
+  const fork = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.15, 6), darkMat);
+  fork.position.set(0.135, 0.1, 0);
+  fork.rotation.z = 0.4;
+  group.add(fork);
+
+  const handlebar = new THREE.Mesh(new RoundedBoxGeometry(0.02, 0.015, 0.14, 1, 0.006), darkMat);
+  handlebar.position.set(0.17, 0.195, 0);
+  group.add(handlebar);
+
+  const headlight = new THREE.Mesh(
+    new THREE.SphereGeometry(0.02, 8, 8),
+    new THREE.MeshStandardMaterial({ color: '#fff6c8', emissive: '#ffdb70', emissiveIntensity: 0.9 }),
+  );
+  headlight.position.set(0.195, 0.13, 0);
+  group.add(headlight);
+
+  const exhaust = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.016, 0.15, 8),
+    new THREE.MeshStandardMaterial({ color: '#cfcfcf', metalness: 0.6, roughness: 0.3 }),
+  );
+  exhaust.rotation.z = Math.PI / 2;
+  exhaust.position.set(-0.03, 0.075, 0.048);
+  group.add(exhaust);
+
+  const rider = new THREE.Mesh(new THREE.CapsuleGeometry(0.034, 0.075, 4, 8), darkMat);
+  rider.position.set(-0.02, 0.21, 0);
+  rider.rotation.z = -0.28;
   group.add(rider);
 
+  const helmet = new THREE.Mesh(
+    new THREE.SphereGeometry(0.029, 10, 8),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.3 }),
+  );
+  helmet.position.set(0.025, 0.275, 0);
+  group.add(helmet);
+
   const wheelMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6 });
-  const wheelGeo = new THREE.CylinderGeometry(0.056, 0.056, 0.032, 12);
-  [[0.11, 0.056, 0], [-0.11, 0.056, 0]].forEach(([x, y, z]) => {
+  const wheelGeo = new THREE.CylinderGeometry(0.062, 0.062, 0.036, 16);
+  [[0.165, 0.062, 0], [-0.135, 0.062, 0]].forEach(([x, y, z]) => {
     const wheel = new THREE.Mesh(wheelGeo, wheelMat);
     wheel.rotation.x = Math.PI / 2;
     wheel.position.set(x, y, z);
@@ -58,6 +167,8 @@ function buildMotorcycle(color) {
 
   return group;
 }
+
+// ---------------- Birds ----------------
 
 function buildBird(color) {
   const group = new THREE.Group();
@@ -80,9 +191,11 @@ function buildBird(color) {
   return group;
 }
 
-function buildBalloon(scale = 1) {
+// ---------------- Balloons ----------------
+
+function buildBalloon(scale, palette) {
   const group = new THREE.Group();
-  const tex = createBalloonTexture();
+  const tex = createBalloonTexture(palette);
   const envelope = new THREE.Mesh(
     new THREE.SphereGeometry(0.22, 20, 16),
     new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }),
@@ -110,6 +223,34 @@ function buildBalloon(scale = 1) {
   return group;
 }
 
+const BALLOON_PALETTES = [
+  ['#FF5A5F', '#FFC72C', '#FF8A3A', '#EF3A5C'],
+  ['#2F5CFF', '#00A99D', '#3FAE2A', '#8FD9FF'],
+  ['#A24FE0', '#FF5A5F', '#FFC72C', '#2F5CFF'],
+];
+
+// ---------------- Clouds ----------------
+
+const CLOUD_TEMPLATES = [
+  [[0, 0, 0, 0.26], [0.22, 0.03, 0, 0.19], [-0.22, 0.02, 0, 0.19], [0.06, 0.14, 0, 0.16]],
+  [[0, 0, 0, 0.2], [0.28, 0, 0.04, 0.16], [-0.26, 0.02, -0.03, 0.17], [0.1, 0.12, 0.02, 0.13], [-0.12, 0.1, -0.02, 0.12]],
+  [[0, 0, 0, 0.24], [0.18, -0.02, 0.1, 0.15], [-0.2, 0.01, -0.08, 0.16], [0, 0.16, 0, 0.14], [0.15, 0.1, -0.08, 0.11]],
+  [[0, 0, 0, 0.16], [0.16, 0.02, 0, 0.13], [-0.16, 0.02, 0, 0.13], [0.32, 0.01, 0, 0.1], [-0.32, 0.01, 0, 0.1]],
+];
+
+function buildCloud(templateIdx, scale) {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1, transparent: true, opacity: 0.92 });
+  const puffs = CLOUD_TEMPLATES[templateIdx % CLOUD_TEMPLATES.length];
+  puffs.forEach(([x, y, z, r]) => {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat);
+    puff.position.set(x, y, z);
+    group.add(puff);
+  });
+  group.scale.setScalar(scale);
+  return group;
+}
+
 export function createAnimatedScenery(arenaRadius, outerRadius) {
   const group = new THREE.Group();
   const animations = [];
@@ -119,19 +260,37 @@ export function createAnimatedScenery(arenaRadius, outerRadius) {
     animations.push({ mesh, type: 'loop', ...opts });
   }
 
-  // car and motorcycle stay on separate lanes well inside the tile ring,
-  // clear of the center buildings so they never clip through anything
-  addLoop(buildCar('#FF5A36'), { radius: arenaRadius * 0.86, height: 0, speed: 0.16, phase: 0 });
-  addLoop(buildMotorcycle('#2F5CFF'), { radius: arenaRadius * 0.97, height: 0, speed: 0.24, phase: Math.PI * 0.65 });
+  // cars and motorcycles each get their own concentric lane (so same-type
+  // vehicles can never collide with each other), all confined to a band
+  // that clears both the center buildings and the tile ring
+  addLoop(buildMotorcycle('#2F5CFF', '#1a1a1a'), { radius: arenaRadius * 0.846, height: 0, speed: 0.26, phase: Math.PI * 0.65 });
+  addLoop(buildSedan('#FF5A36'), { radius: arenaRadius * 0.871, height: 0, speed: 0.16, phase: 0 });
+  addLoop(buildMotorcycle('#EF3A5C', '#2a2a2a'), { radius: arenaRadius * 0.896, height: 0, speed: -0.2, phase: Math.PI * 1.6 });
+  addLoop(buildVan('#3FAE2A'), { radius: arenaRadius * 0.92, height: 0, speed: -0.12, phase: Math.PI * 0.45 });
+  addLoop(buildMotorcycle('#FFC72C', '#333333'), { radius: arenaRadius * 0.945, height: 0, speed: 0.3, phase: Math.PI * 0.15 });
+  addLoop(buildSportsCar('#A24FE0'), { radius: arenaRadius * 0.97, height: 0, speed: 0.22, phase: Math.PI * 1.1 });
 
   addLoop(buildBird('#3a3a3a'), { radius: outerRadius * 0.55, height: 2.3, speed: 0.34, phase: 0 });
   addLoop(buildBird('#7a5a3a'), { radius: outerRadius * 0.7, height: 2.6, speed: -0.28, phase: Math.PI });
 
-  addLoop(buildBalloon(0.85), {
-    radius: outerRadius * 0.62, height: 3.5, speed: 0.045, phase: Math.PI * 0.3, bobAmp: 0.12, bobSpeed: 0.4, spin: false,
+  addLoop(buildBalloon(0.85, BALLOON_PALETTES[0]), {
+    radius: outerRadius * 0.6, height: 3.5, speed: 0.05, phase: Math.PI * 0.3, bobAmp: 0.16, bobSpeed: 0.4, spin: false,
   });
-  addLoop(buildBalloon(1.05), {
-    radius: outerRadius * 0.88, height: 4.1, speed: -0.03, phase: Math.PI * 1.4, bobAmp: 0.15, bobSpeed: 0.32, spin: false,
+  addLoop(buildBalloon(1.05, BALLOON_PALETTES[1]), {
+    radius: outerRadius * 0.88, height: 4.1, speed: -0.035, phase: Math.PI * 1.4, bobAmp: 0.2, bobSpeed: 0.32, spin: false,
+  });
+  addLoop(buildBalloon(0.7, BALLOON_PALETTES[2]), {
+    radius: outerRadius * 0.42, height: 3.1, speed: 0.065, phase: Math.PI * 1.0, bobAmp: 0.13, bobSpeed: 0.48, spin: false,
+  });
+
+  const cloudSpots = [
+    { idx: 0, radius: outerRadius * 0.72, height: 4.4, speed: 0.018, phase: Math.PI * 0.1, scale: 1.1 },
+    { idx: 1, radius: outerRadius * 0.9, height: 4.9, speed: -0.014, phase: Math.PI * 0.9, scale: 1.4 },
+    { idx: 2, radius: outerRadius * 0.55, height: 5.3, speed: 0.022, phase: Math.PI * 1.5, scale: 0.9 },
+    { idx: 3, radius: outerRadius * 1.05, height: 4.6, speed: -0.017, phase: Math.PI * 0.55, scale: 1.2 },
+  ];
+  cloudSpots.forEach(({ idx, radius, height, speed, phase, scale }) => {
+    addLoop(buildCloud(idx, scale), { radius, height, speed, phase, bobAmp: 0.06, bobSpeed: 0.25, spin: false });
   });
 
   function update(elapsed) {

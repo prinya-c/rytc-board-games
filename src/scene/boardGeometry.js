@@ -264,18 +264,25 @@ function buildLandmarkTower() {
   base.receiveShadow = true;
   group.add(base);
 
+  // four name signs ringing the upper deck so the title reads correctly
+  // from whichever side the camera is orbited to
   const plaqueTex = createTitlePlaqueTexture('ตะลุยโลกอาชีพ', 'EEC New S-Curve Career Quest');
-  const plaqueGeo = new THREE.PlaneGeometry(CELL_SIZE * 1.7, CELL_SIZE * 0.56);
-  const plaqueMat = new THREE.MeshStandardMaterial({
-    map: plaqueTex,
-    roughness: 0.55,
-    transparent: true,
-    side: THREE.DoubleSide,
-  });
-  const plaque = new THREE.Mesh(plaqueGeo, plaqueMat);
-  plaque.position.set(0, 0.56, 0.68);
-  plaque.rotation.x = -0.12;
-  group.add(plaque);
+  const signW = CELL_SIZE * 0.62;
+  const signH = CELL_SIZE * 0.23;
+  const signRadius = 0.36;
+  const signY = height * 0.8;
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI) / 2;
+    const plaqueMat = new THREE.MeshStandardMaterial({
+      map: plaqueTex,
+      roughness: 0.55,
+      transparent: true,
+    });
+    const plaque = new THREE.Mesh(new THREE.PlaneGeometry(signW, signH), plaqueMat);
+    plaque.position.set(Math.sin(angle) * signRadius, signY, Math.cos(angle) * signRadius);
+    plaque.rotation.y = angle;
+    group.add(plaque);
+  }
 
   return group;
 }
@@ -325,19 +332,6 @@ function buildTree(scale = 1) {
   return group;
 }
 
-function buildCloud(scale = 1) {
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1, transparent: true, opacity: 0.92 });
-  const puffs = [[0, 0, 0, 0.26], [0.22, 0.03, 0, 0.19], [-0.22, 0.02, 0, 0.19], [0.06, 0.14, 0, 0.16]];
-  puffs.forEach(([x, y, z, r]) => {
-    const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat);
-    puff.position.set(x, y, z);
-    group.add(puff);
-  });
-  group.scale.setScalar(scale);
-  return group;
-}
-
 export const SCENERY_RADIUS = BOARD_EXTENT / 2 + TRAY_MARGIN * 0.34;
 
 function buildScenery() {
@@ -356,17 +350,6 @@ function buildScenery() {
     const tree = buildTree(scale);
     tree.position.set(x, 0, z);
     group.add(tree);
-  });
-
-  const cloudSpots = [
-    [-outer * 0.7, 3.4, -outer * 0.4, 1.1],
-    [outer * 0.8, 3.9, outer * 0.2, 1.4],
-    [outer * 0.1, 4.3, -outer * 0.9, 0.9],
-  ];
-  cloudSpots.forEach(([x, y, z, scale]) => {
-    const cloud = buildCloud(scale);
-    cloud.position.set(x, y, z);
-    group.add(cloud);
   });
 
   return group;
