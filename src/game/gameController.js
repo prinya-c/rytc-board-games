@@ -71,11 +71,11 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: exi
         if (cell.type === 'finish') {
           const top1 = computeTop3(player.score)[0];
           transformTokenForCareer(token, top1.key);
-          scene.celebrateFinish(to, ZONES[top1.key].color, {
+          scene.celebrateFinish(token.position.clone(), ZONES[top1.key].color, token.rotation.y, {
             onDone: () => landOnCell(player, token),
           });
         } else {
-          scene.endTokenFollow(to, { onDone: () => landOnCell(player, token) });
+          scene.endTokenFollow(token.position.clone(), { onDone: () => landOnCell(player, token) });
         }
       },
     });

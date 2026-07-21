@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buildBoard, SCENERY_RADIUS, ARENA_RADIUS, cellWorldPosition } from './boardGeometry.js';
+import { buildBoard, SCENERY_RADIUS, ARENA_RADIUS } from './boardGeometry.js';
 import { createAnimatedScenery } from './animatedScenery.js';
 
 function easeInOutQuad(t) {
@@ -116,17 +116,19 @@ export function createBoardScene(container) {
     controls.target.y += (pos.y - controls.target.y) * 0.05;
   }
 
-  function endTokenFollow(cellId, { holdMs = 1100, duration = 500, onDone } = {}) {
+  function endTokenFollow(tokenPos, { holdMs = 1100, duration = 500, onDone } = {}) {
     if (!followState) {
       onDone?.();
       return;
     }
-    const cellPos = cellWorldPosition(cellId);
+    const cellPos = tokenPos.clone();
     const settledCamPos = camera.position.clone();
     const settledTarget = controls.target.clone();
 
-    // snap the look-at point precisely onto the cell center (follow lerp
-    // leaves a small trailing offset), then hold, then return to overview.
+    // snap the look-at point precisely onto the token itself (follow lerp
+    // leaves a small trailing offset — and cell center isn't quite right
+    // either, since a token can sit off-center within its cell when sharing
+    // a tile with other players), then hold, then return to overview.
     panCamera(settledCamPos, settledCamPos, settledTarget, cellPos, 260, () => {
       setTimeout(() => {
         const { overviewCamPos, overviewTarget, savedMinDistance } = followState;
@@ -140,21 +142,25 @@ export function createBoardScene(container) {
     });
   }
 
-  // Hero reveal for the token's career transformation at FINISH: a tighter
-  // zoom than the normal per-cell focus, a slow orbit around it while a
-  // glowing ring + warm highlight light make it unmistakably the center of
-  // attention, then a pan back to the overview.
-  function celebrateFinish(cellId, color, { zoomDuration = 800, orbitDuration = 2400, returnDuration = 800, onDone } = {}) {
+  // Hero reveal for the token's career transformation at FINISH: zoom in
+  // dead-on to the token's own facing direction, hold it centered and
+  // static for a couple seconds so its costume is easy to actually look at
+  // (a glowing ring + warm highlight light keep it the center of attention),
+  // then pan back to the overview.
+  function celebrateFinish(tokenPos, color, facingAngle, { zoomDuration = 850, holdMs = 2600, returnDuration = 800, onDone } = {}) {
     if (!followState) {
       onDone?.();
       return;
     }
-    const cellPos = cellWorldPosition(cellId);
-    const lookAt = cellPos.clone().add(new THREE.Vector3(0, 0.5, 0));
+    // Aim at the token's own position, not the cell center — tokens sitting
+    // on a shared FINISH tile are offset from the tile's middle, and at this
+    // close a zoom that gap is very visible if ignored.
+    const cellPos = tokenPos.clone();
+    const lookAt = cellPos.clone().add(new THREE.Vector3(0, 0.52, 0));
     const startCamPos = camera.position.clone();
     const startTarget = controls.target.clone();
 
-    controls.minDistance = Math.min(controls.minDistance, 1.6);
+    controls.minDistance = Math.min(controls.minDistance, 1.0);
 
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.35, 0.62, 40),
@@ -172,14 +178,16 @@ export function createBoardScene(container) {
     highlight.position.set(cellPos.x, cellPos.y + 1.6, cellPos.z);
     scene.add(highlight);
 
-    const closeRadius = 2.1;
-    const closeHeight = lookAt.y + 1.25;
-    const dir0 = startCamPos.clone().sub(cellPos);
-    const startAngle = Math.atan2(dir0.z, dir0.x);
+    // Stand directly in front of the token's actual facing direction (not
+    // wherever the free-roam camera happened to be) so the "front" really is
+    // its front, and keep it dead-centered in frame the whole time.
+    const closeRadius = 1.35;
+    const closeHeight = 0.78;
+    const front = new THREE.Vector3(Math.sin(facingAngle), 0, Math.cos(facingAngle));
     const closeCamPos = new THREE.Vector3(
-      cellPos.x + Math.cos(startAngle) * closeRadius,
+      cellPos.x + front.x * closeRadius,
       closeHeight,
-      cellPos.z + Math.sin(startAngle) * closeRadius,
+      cellPos.z + front.z * closeRadius,
     );
 
     const introStart = performance.now();
@@ -193,32 +201,14 @@ export function createBoardScene(container) {
       if (eased < 1) {
         requestAnimationFrame(introTick);
       } else {
-        orbit();
+        // Static hold, dead-on and centered — no orbiting — so the costume
+        // is actually easy to look at instead of sliding past in motion.
+        camera.position.copy(closeCamPos);
+        controls.target.copy(lookAt);
+        setTimeout(outro, holdMs);
       }
     }
     requestAnimationFrame(introTick);
-
-    function orbit() {
-      const orbitStart = performance.now();
-      const sweep = Math.PI * 0.34;
-      function orbitTick(now) {
-        const eased = easeInOutQuad(Math.min(1, (now - orbitStart) / orbitDuration));
-        const angle = startAngle + sweep * eased;
-        camera.position.set(
-          cellPos.x + Math.cos(angle) * closeRadius,
-          closeHeight,
-          cellPos.z + Math.sin(angle) * closeRadius,
-        );
-        controls.target.copy(lookAt);
-        ring.rotation.z += 0.01;
-        if (eased < 1) {
-          requestAnimationFrame(orbitTick);
-        } else {
-          outro();
-        }
-      }
-      requestAnimationFrame(orbitTick);
-    }
 
     function outro() {
       const { overviewCamPos, overviewTarget, savedMinDistance } = followState;
