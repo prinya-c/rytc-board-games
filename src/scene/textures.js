@@ -271,6 +271,35 @@ export function createBalloonTexture(colors = ['#FF5A5F', '#FFC72C', '#2F5CFF', 
   return tex;
 }
 
+export function createWickerTexture() {
+  const s = 128;
+  const { canvas, ctx } = ctx2d(s);
+  ctx.fillStyle = '#9c6a35';
+  ctx.fillRect(0, 0, s, s);
+  ctx.strokeStyle = 'rgba(60,35,10,0.4)';
+  ctx.lineWidth = 3;
+  const step = 10;
+  for (let y = -s; y < s * 2; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(s, y + s);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,220,170,0.25)';
+  for (let y = -s + step / 2; y < s * 2; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(s, y - s);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 1);
+  return tex;
+}
+
 export function createFacadeTexture(color, rows = 5, cols = 4) {
   const s = 256;
   const { canvas, ctx } = ctx2d(s);
@@ -278,27 +307,53 @@ export function createFacadeTexture(color, rows = 5, cols = 4) {
   ctx.fillRect(0, 0, s, s);
   // subtle vertical shading for a wall-like feel
   const shade = ctx.createLinearGradient(0, 0, s, 0);
-  shade.addColorStop(0, 'rgba(0,0,0,0.12)');
-  shade.addColorStop(0.5, 'rgba(255,255,255,0.08)');
-  shade.addColorStop(1, 'rgba(0,0,0,0.12)');
+  shade.addColorStop(0, 'rgba(0,0,0,0.14)');
+  shade.addColorStop(0.5, 'rgba(255,255,255,0.09)');
+  shade.addColorStop(1, 'rgba(0,0,0,0.16)');
   ctx.fillStyle = shade;
   ctx.fillRect(0, 0, s, s);
 
-  const padX = s * 0.12;
-  const padY = s * 0.1;
+  const padX = s * 0.1;
+  const padY = s * 0.08;
   const cellW = (s - padX * 2) / cols;
   const cellH = (s - padY * 2) / rows;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const wx = padX + c * cellW + cellW * 0.16;
-      const wy = padY + r * cellH + cellH * 0.18;
-      const ww = cellW * 0.68;
-      const wh = cellH * 0.6;
+      const wx = padX + c * cellW + cellW * 0.14;
+      const wy = padY + r * cellH + cellH * 0.16;
+      const ww = cellW * 0.72;
+      const wh = cellH * 0.64;
       const lit = Math.random() > 0.35;
-      ctx.fillStyle = lit ? 'rgba(255,246,200,0.88)' : 'rgba(20,30,45,0.35)';
-      roundRectPath(ctx, wx, wy, ww, wh, Math.min(ww, wh) * 0.22);
+      const rad = Math.min(ww, wh) * 0.16;
+      // frame
+      roundRectPath(ctx, wx - 2, wy - 2, ww + 4, wh + 4, rad + 1);
+      ctx.fillStyle = 'rgba(15,20,25,0.4)';
       ctx.fill();
+      // pane
+      ctx.fillStyle = lit ? 'rgba(255,241,189,0.92)' : 'rgba(25,35,52,0.55)';
+      roundRectPath(ctx, wx, wy, ww, wh, rad);
+      ctx.fill();
+      // mullion (window divider) + sill highlight
+      if (lit) {
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillRect(wx, wy, ww, wh * 0.14);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(wx + ww / 2, wy);
+      ctx.lineTo(wx + ww / 2, wy + wh);
+      ctx.stroke();
     }
+  }
+
+  // ground-floor band (darker, like a lobby/entrance strip)
+  const floorH = cellH * 0.9;
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(0, s - floorH, s, floorH);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  for (let x = padX; x < s - padX; x += cellW / 2) {
+    ctx.fillRect(x, s - floorH + floorH * 0.25, 3, floorH * 0.5);
   }
 
   const tex = new THREE.CanvasTexture(canvas);

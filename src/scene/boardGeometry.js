@@ -152,16 +152,65 @@ function buildRoofAccent(key, zone) {
 
 const BUILDING_HEIGHT = { dig: 1.55, rob: 1.1, log: 0.95, bio: 1.0, med: 1.3 };
 
+function buildPlinth(footprint, y) {
+  const plinth = new THREE.Mesh(
+    new RoundedBoxGeometry(footprint * 1.16, 0.07, footprint * 1.16, 1, footprint * 0.05),
+    new THREE.MeshStandardMaterial({ color: '#454545', roughness: 0.75 }),
+  );
+  plinth.position.y = y + 0.035;
+  plinth.castShadow = true;
+  plinth.receiveShadow = true;
+  return plinth;
+}
+
+function buildCornice(footprint, y) {
+  const cornice = new THREE.Mesh(
+    new RoundedBoxGeometry(footprint * 1.1, 0.035, footprint * 1.1, 1, footprint * 0.05),
+    new THREE.MeshStandardMaterial({ color: '#f2f0ea', roughness: 0.5 }),
+  );
+  cornice.position.y = y;
+  cornice.castShadow = true;
+  return cornice;
+}
+
+function buildRooftopClutter(footprint) {
+  const group = new THREE.Group();
+  const tank = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.05, 0.09, 10),
+    new THREE.MeshStandardMaterial({ color: '#8a95a0', roughness: 0.45, metalness: 0.35 }),
+  );
+  tank.position.set(-footprint * 0.28, 0.045, footprint * 0.24);
+  tank.castShadow = true;
+  group.add(tank);
+
+  const ac = new THREE.Mesh(
+    new RoundedBoxGeometry(0.09, 0.05, 0.07, 1, 0.012),
+    new THREE.MeshStandardMaterial({ color: '#cfcfcf', roughness: 0.55, metalness: 0.2 }),
+  );
+  ac.position.set(footprint * 0.26, 0.025, -footprint * 0.22);
+  ac.castShadow = true;
+  group.add(ac);
+
+  return group;
+}
+
 function buildSimpleBlock(zone, footprint, h, baseY) {
+  const group = new THREE.Group();
+  const plinth = buildPlinth(footprint, baseY);
+  group.add(plinth);
+
   const facadeMat = new THREE.MeshStandardMaterial({ map: createFacadeTexture(zone.color), roughness: 0.6 });
   const roofMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.5 });
   const geo = new RoundedBoxGeometry(footprint, h, footprint, 2, footprint * 0.12);
   const mats = [facadeMat, facadeMat, roofMat, roofMat, facadeMat, facadeMat];
   const mesh = new THREE.Mesh(geo, mats);
-  mesh.position.y = baseY + h / 2;
+  mesh.position.y = baseY + 0.07 + h / 2;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-  return mesh;
+  group.add(mesh);
+
+  group.add(buildCornice(footprint, baseY + 0.07 + h));
+  return group;
 }
 
 function buildZoneBuilding(key) {
@@ -192,18 +241,27 @@ function buildZoneBuilding(key) {
   // main tower, centered so the rim label stays uncovered from every angle
   const h = BUILDING_HEIGHT[key];
   const footprint = 0.56;
+  const towerBaseY = 0.16 + 0.07;
+  group.add(buildPlinth(footprint, 0.16));
+
   const facadeMat = new THREE.MeshStandardMaterial({ map: createFacadeTexture(zone.color), roughness: 0.6 });
   const roofMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.5 });
   const towerGeo = new RoundedBoxGeometry(footprint, h, footprint, 2, footprint * 0.1);
   const towerMats = [facadeMat, facadeMat, roofMat, roofMat, facadeMat, facadeMat];
   const tower = new THREE.Mesh(towerGeo, towerMats);
-  tower.position.y = 0.16 + h / 2;
+  tower.position.y = towerBaseY + h / 2;
   tower.castShadow = true;
   tower.receiveShadow = true;
   group.add(tower);
 
+  group.add(buildCornice(footprint, towerBaseY + h));
+
+  const clutter = buildRooftopClutter(footprint);
+  clutter.position.y = towerBaseY + h;
+  group.add(clutter);
+
   const accent = buildRoofAccent(key, zone);
-  accent.position.set(0, 0.16 + h, 0);
+  accent.position.set(0, towerBaseY + h, 0);
   group.add(accent);
 
   // a shorter companion block for a fuller "mini skyline" silhouette
