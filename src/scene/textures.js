@@ -156,25 +156,89 @@ export function createBoardBackdropTexture(gridSide, cellSize) {
   return tex;
 }
 
+function drawArcText(ctx, text, cx, cy, radius, centerAngle, spread, color, fontSize) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = `800 ${fontSize}px "Noto Sans Thai", system-ui, sans-serif`;
+  const chars = text.split('');
+  const start = centerAngle - spread / 2;
+  const step = chars.length > 1 ? spread / (chars.length - 1) : 0;
+  chars.forEach((ch, i) => {
+    const angle = chars.length > 1 ? start + step * i : centerAngle;
+    ctx.save();
+    ctx.translate(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle));
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+// Disc "plaza" texture: keeps the zone name legible around the rim so a
+// building model can occupy the open center without covering the label.
 export function createEmblemTexture({ icon, label, color, soft }) {
   const { canvas, ctx } = ctx2d(256);
   const s = 256;
+  const cx = s / 2;
+  const cy = s / 2;
+
   ctx.fillStyle = soft;
   ctx.beginPath();
-  ctx.arc(s / 2, s / 2, s / 2 - 4, 0, Math.PI * 2);
+  ctx.arc(cx, cy, s / 2 - 4, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = color;
   ctx.lineWidth = 10;
   ctx.stroke();
 
-  ctx.font = `${Math.round(s * 0.38)}px "Noto Color Emoji", "Apple Color Emoji", sans-serif`;
+  // small icon badge at the top rim
+  ctx.font = `${Math.round(s * 0.16)}px "Noto Color Emoji", "Apple Color Emoji", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(icon, s / 2, s / 2 - 18);
+  ctx.fillText(icon, cx, cy - s * 0.33);
 
-  ctx.font = '700 26px "Noto Sans Thai", system-ui, sans-serif';
-  ctx.fillStyle = color;
-  ctx.fillText(label, s / 2, s / 2 + 62);
+  // zone name curved along the bottom rim, clear of the center
+  drawArcText(ctx, label, cx, cy, s * 0.36, Math.PI / 2, Math.PI * 0.62, color, Math.round(s * 0.105));
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+export function createLatticeTowerTexture() {
+  const w = 256;
+  const h = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  const bandH = h / 9;
+  for (let i = 0; i < 9; i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#FF5A36' : '#FBFAF6';
+    ctx.fillRect(0, i * bandH, w, bandH);
+  }
+
+  ctx.strokeStyle = 'rgba(110,30,15,0.4)';
+  ctx.lineWidth = 3;
+  const step = 30;
+  for (let y = -step; y < h + step; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y + step);
+    ctx.moveTo(w, y);
+    ctx.lineTo(0, y + step);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(110,30,15,0.22)';
+  ctx.lineWidth = 2;
+  for (let y = 0; y < h; y += bandH) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;

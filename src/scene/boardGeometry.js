@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CELLS } from '../game/cells.js';
 import { ZONES } from '../game/zones.js';
 import { cellGridPosition, GRID_MAX, isCorner } from '../game/layout.js';
-import { createTileTexture, createBoardBackdropTexture, createEmblemTexture, createFacadeTexture, createTitlePlaqueTexture } from './textures.js';
+import { createTileTexture, createBoardBackdropTexture, createEmblemTexture, createFacadeTexture, createTitlePlaqueTexture, createLatticeTowerTexture } from './textures.js';
 
 export const CELL_SIZE = 1.2;
 export const TILE_HEIGHT = 0.3;
@@ -146,21 +146,34 @@ function buildRoofAccent(key, zone) {
   return group;
 }
 
-const BUILDING_HEIGHT = { dig: 1.15, rob: 0.82, log: 0.7, bio: 0.78, med: 1.0 };
+const BUILDING_HEIGHT = { dig: 1.55, rob: 1.1, log: 0.95, bio: 1.0, med: 1.3 };
+
+function buildSimpleBlock(zone, footprint, h, baseY) {
+  const facadeMat = new THREE.MeshStandardMaterial({ map: createFacadeTexture(zone.color), roughness: 0.6 });
+  const roofMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.5 });
+  const geo = new RoundedBoxGeometry(footprint, h, footprint, 2, footprint * 0.12);
+  const mats = [facadeMat, facadeMat, roofMat, roofMat, facadeMat, facadeMat];
+  const mesh = new THREE.Mesh(geo, mats);
+  mesh.position.y = baseY + h / 2;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
 
 function buildZoneBuilding(key) {
   const zone = ZONES[key];
   const group = new THREE.Group();
 
-  // base plaza with the zone icon + label, as before
-  const emblemSize = CELL_SIZE * 1.1;
+  // base plaza: zone icon + curved label around the rim, kept clear of the
+  // buildings so it stays legible no matter how tall the skyline gets.
+  const emblemSize = CELL_SIZE * 1.35;
   const tex = createEmblemTexture({
     icon: { dig: '💻', rob: '🦾', log: '✈️', bio: '🧪', med: '🩺' }[key],
     label: zone.label,
     color: zone.color,
     soft: zone.soft,
   });
-  const plazaGeo = new THREE.CylinderGeometry(emblemSize / 2, emblemSize / 2, 0.16, 32);
+  const plazaGeo = new THREE.CylinderGeometry(emblemSize / 2, emblemSize / 2, 0.16, 36);
   const plazaMat = [
     new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.7 }),
     new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }),
@@ -172,50 +185,83 @@ function buildZoneBuilding(key) {
   plaza.receiveShadow = true;
   group.add(plaza);
 
-  // tower rising from the plaza's edge so the label stays visible
+  // main tower, centered so the rim label stays uncovered from every angle
   const h = BUILDING_HEIGHT[key];
-  const footprint = 0.42;
-  const facadeTex = createFacadeTexture(zone.color);
-  const facadeMat = new THREE.MeshStandardMaterial({ map: facadeTex, roughness: 0.6 });
+  const footprint = 0.56;
+  const facadeMat = new THREE.MeshStandardMaterial({ map: createFacadeTexture(zone.color), roughness: 0.6 });
   const roofMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.5 });
-  const towerGeo = new RoundedBoxGeometry(footprint, h, footprint, 2, footprint * 0.12);
+  const towerGeo = new RoundedBoxGeometry(footprint, h, footprint, 2, footprint * 0.1);
   const towerMats = [facadeMat, facadeMat, roofMat, roofMat, facadeMat, facadeMat];
   const tower = new THREE.Mesh(towerGeo, towerMats);
-  tower.position.set(-emblemSize * 0.18, 0.16 + h / 2, -emblemSize * 0.18);
+  tower.position.y = 0.16 + h / 2;
   tower.castShadow = true;
   tower.receiveShadow = true;
   group.add(tower);
 
   const accent = buildRoofAccent(key, zone);
-  accent.position.set(tower.position.x, 0.16 + h, tower.position.z);
+  accent.position.set(0, 0.16 + h, 0);
   group.add(accent);
+
+  // a shorter companion block for a fuller "mini skyline" silhouette
+  const sideH = h * 0.55;
+  const sideBlock = buildSimpleBlock(zone, 0.32, sideH, 0.16);
+  sideBlock.position.x = footprint * 0.62 + 0.16;
+  sideBlock.position.z = -footprint * 0.5;
+  group.add(sideBlock);
 
   return group;
 }
 
-function buildCenterEmblems() {
+function buildLandmarkTower() {
   const group = new THREE.Group();
-  const zoneKeys = ['dig', 'rob', 'log', 'bio', 'med'];
-  const radius = CELL_SIZE * 1.6;
+  const height = 2.5;
 
-  zoneKeys.forEach((key, i) => {
-    const angle = (i / zoneKeys.length) * Math.PI * 2 - Math.PI / 2;
-    const building = buildZoneBuilding(key);
-    building.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-    group.add(building);
-  });
+  const towerTex = createLatticeTowerTexture();
+  const bodyGeo = new THREE.CylinderGeometry(0.045, 0.32, height, 4, 1, false);
+  const bodyMat = new THREE.MeshStandardMaterial({ map: towerTex, roughness: 0.55 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = height / 2;
+  body.rotation.y = Math.PI / 4;
+  body.castShadow = true;
+  group.add(body);
 
-  // upright signpost with the game title, standing in the center
-  const post = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05, 0.06, 0.75, 12),
-    new THREE.MeshStandardMaterial({ color: '#8a6a3a', roughness: 0.8 }),
+  const deckMat = new THREE.MeshStandardMaterial({ color: '#f2f0ea', roughness: 0.4 });
+  const lowerDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.07, 4), deckMat);
+  lowerDeck.position.y = height * 0.34;
+  lowerDeck.rotation.y = Math.PI / 4;
+  lowerDeck.castShadow = true;
+  group.add(lowerDeck);
+
+  const upperDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.06, 4), deckMat);
+  upperDeck.position.y = height * 0.74;
+  upperDeck.rotation.y = Math.PI / 4;
+  group.add(upperDeck);
+
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, 0.025, 0.5, 8),
+    new THREE.MeshStandardMaterial({ color: '#e2e2e2', metalness: 0.5, roughness: 0.3 }),
   );
-  post.position.y = 0.375;
-  post.castShadow = true;
-  group.add(post);
+  mast.position.y = height + 0.25;
+  group.add(mast);
+
+  const beacon = new THREE.Mesh(
+    new THREE.SphereGeometry(0.035, 10, 8),
+    new THREE.MeshStandardMaterial({ color: '#ff5050', emissive: '#ff2020', emissiveIntensity: 1.6 }),
+  );
+  beacon.position.y = height + 0.52;
+  group.add(beacon);
+
+  const base = new THREE.Mesh(
+    new RoundedBoxGeometry(0.62, 0.16, 0.62, 2, 0.07),
+    new THREE.MeshStandardMaterial({ color: '#c9a45c', roughness: 0.8 }),
+  );
+  base.position.y = 0.08;
+  base.castShadow = true;
+  base.receiveShadow = true;
+  group.add(base);
 
   const plaqueTex = createTitlePlaqueTexture('ตะลุยโลกอาชีพ', 'EEC New S-Curve Career Quest');
-  const plaqueGeo = new THREE.PlaneGeometry(CELL_SIZE * 2.6, CELL_SIZE * 0.86);
+  const plaqueGeo = new THREE.PlaneGeometry(CELL_SIZE * 1.7, CELL_SIZE * 0.56);
   const plaqueMat = new THREE.MeshStandardMaterial({
     map: plaqueTex,
     roughness: 0.55,
@@ -223,9 +269,27 @@ function buildCenterEmblems() {
     side: THREE.DoubleSide,
   });
   const plaque = new THREE.Mesh(plaqueGeo, plaqueMat);
-  plaque.position.set(0, 1.05, 0);
-  plaque.castShadow = true;
+  plaque.position.set(0, 0.56, 0.68);
+  plaque.rotation.x = -0.12;
   group.add(plaque);
+
+  return group;
+}
+
+function buildCenterEmblems() {
+  const group = new THREE.Group();
+  const zoneKeys = ['dig', 'rob', 'log', 'bio', 'med'];
+  const radius = CELL_SIZE * 1.9;
+
+  zoneKeys.forEach((key, i) => {
+    const angle = (i / zoneKeys.length) * Math.PI * 2 - Math.PI / 2;
+    const building = buildZoneBuilding(key);
+    building.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+    building.rotation.y = -angle;
+    group.add(building);
+  });
+
+  group.add(buildLandmarkTower());
 
   return group;
 }
@@ -270,13 +334,19 @@ function buildCloud(scale = 1) {
   return group;
 }
 
+export const SCENERY_RADIUS = BOARD_EXTENT / 2 + TRAY_MARGIN * 0.34;
+
 function buildScenery() {
   const group = new THREE.Group();
-  const outer = BOARD_EXTENT / 2 + TRAY_MARGIN * 0.34;
+  const outer = SCENERY_RADIUS;
 
   const treeSpots = [
     [outer, outer, 1.1], [-outer, outer, 0.9], [outer, -outer, 0.95], [-outer, -outer, 1.15],
-    [0, outer, 0.8], [0, -outer, 0.85],
+    [0, outer, 0.8], [0, -outer, 0.85], [outer, 0, 0.9], [-outer, 0, 1.0],
+    [outer * 0.55, outer, 0.7], [-outer * 0.55, outer, 0.75],
+    [outer * 0.55, -outer, 0.8], [-outer * 0.55, -outer, 0.7],
+    [outer, outer * 0.55, 0.85], [outer, -outer * 0.55, 0.75],
+    [-outer, outer * 0.55, 0.8], [-outer, -outer * 0.55, 0.9],
   ];
   treeSpots.forEach(([x, z, scale]) => {
     const tree = buildTree(scale);
