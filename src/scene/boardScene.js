@@ -90,31 +90,50 @@ export function createBoardScene(container) {
     requestAnimationFrame(tick);
   }
 
-  // Cinematic zoom onto a cell when a token lands, then back out to the
-  // overview before the mission popup opens — a beat that shows off which
-  // cell was landed on without permanently changing the player's view.
-  function focusOnCell(cellId, { holdMs = 1100, zoomDistance = 3.4, duration = 750, onDone } = {}) {
-    const overviewCamPos = camera.position.clone();
-    const overviewTarget = controls.target.clone();
-    const savedMinDistance = controls.minDistance;
+  // Continuous camera-follow while a token walks: begin tracking as soon as
+  // it starts hopping, re-center the look-at point on it every frame, then
+  // once it arrives, settle exactly onto the landed cell, hold, and pan back
+  // to the saved overview before the mission popup opens.
+  let followState = null;
 
-    const cellPos = cellWorldPosition(cellId);
-    const dir = overviewCamPos.clone().sub(overviewTarget).normalize();
-    const focusCamPos = cellPos.clone().addScaledVector(dir, zoomDistance);
-
+  function beginTokenFollow() {
+    followState = {
+      overviewCamPos: camera.position.clone(),
+      overviewTarget: controls.target.clone(),
+      savedMinDistance: controls.minDistance,
+    };
     controls.enabled = false;
-    controls.minDistance = Math.min(savedMinDistance, zoomDistance - 0.5);
+    controls.minDistance = Math.min(controls.minDistance, 2.5);
+  }
 
-    panCamera(overviewCamPos, focusCamPos, overviewTarget, cellPos, duration, () => {
+  function trackTokenPosition(pos) {
+    if (!followState) return;
+    controls.target.lerp(pos, 0.32);
+  }
+
+  function endTokenFollow(cellId, { holdMs = 1100, duration = 500, onDone } = {}) {
+    if (!followState) {
+      onDone?.();
+      return;
+    }
+    const cellPos = cellWorldPosition(cellId);
+    const settledCamPos = camera.position.clone();
+    const settledTarget = controls.target.clone();
+
+    // snap the look-at point precisely onto the cell center (follow lerp
+    // leaves a small trailing offset), then hold, then return to overview.
+    panCamera(settledCamPos, settledCamPos, settledTarget, cellPos, 260, () => {
       setTimeout(() => {
-        panCamera(focusCamPos, overviewCamPos, cellPos, overviewTarget, duration, () => {
+        const { overviewCamPos, overviewTarget, savedMinDistance } = followState;
+        panCamera(camera.position.clone(), overviewCamPos, cellPos, overviewTarget, duration, () => {
           controls.minDistance = savedMinDistance;
           controls.enabled = true;
+          followState = null;
           onDone?.();
         });
       }, holdMs);
     });
   }
 
-  return { scene, camera, renderer, controls, board, focusOnCell };
+  return { scene, camera, renderer, controls, board, beginTokenFollow, trackTokenPosition, endTokenFollow };
 }

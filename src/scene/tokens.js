@@ -114,7 +114,7 @@ export function placeTokenAtCell(token, cellId) {
   token.position.set(pos.x + ox, pos.y, pos.z + oz);
 }
 
-export function animateTokenMove(token, fromCell, toCell, { onDone } = {}) {
+export function animateTokenMove(token, fromCell, toCell, { onDone, onUpdate } = {}) {
   const steps = [];
   const dir = toCell > fromCell ? 1 : -1;
   for (let c = fromCell; c !== toCell; c += dir) steps.push(c + dir);
@@ -131,7 +131,9 @@ export function animateTokenMove(token, fromCell, toCell, { onDone } = {}) {
     const baseY = targetPos.y;
     const start = token.position.clone();
     const end = new THREE.Vector3(targetPos.x + ox, baseY, targetPos.z + oz);
-    const duration = 220;
+    // Slow enough that a camera trying to track the token step-by-step can
+    // actually keep up with it instead of snapping between cells.
+    const duration = 420;
     const startTime = performance.now();
     const hopHeight = 0.35;
     const startRotY = token.rotation.y;
@@ -143,6 +145,7 @@ export function animateTokenMove(token, fromCell, toCell, { onDone } = {}) {
       token.position.lerpVectors(start, end, eased);
       token.position.y = baseY + Math.sin(t * Math.PI) * hopHeight;
       token.rotation.y = startRotY + (endRotY - startRotY) * eased;
+      onUpdate?.(token.position);
       if (t < 1) {
         requestAnimationFrame(tick);
       } else {
