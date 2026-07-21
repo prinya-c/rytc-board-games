@@ -1,5 +1,6 @@
 import { ZONES } from '../game/zones.js';
 import { computeProfile } from '../game/scoring.js';
+import { renderSceneDataUrl } from './sceneArt.js';
 
 const TYPE_LABEL = {
   A: 'ค้นหาตัวเอง',
@@ -30,15 +31,23 @@ export function showMission(root, cell, { onResolve, player }) {
         </div>`).join('')}</div>`
     : '';
 
+  const mechMsg = mechanicText(cell);
+  const mechanicBox = mechMsg && mechMsg !== cell.scenario
+    ? `<div class="mission-mechanic">${mechMsg}</div>`
+    : '';
+
   const bodyHtml = cell.options
     ? `<div class="mission-options">${optionsHtml}</div>`
-    : `<div class="mission-mechanic">${mechanicText(cell)}</div>
+    : `${mechanicBox}
        ${checkpointBars}
        <button type="button" class="btn btn-primary" id="mission-continue" style="margin-top:16px;">ไปต่อ</button>`;
+
+  const sceneUrl = renderSceneDataUrl(cell, player?.color);
 
   root.innerHTML = `
     <div class="overlay dim">
       <div class="panel mission-panel">
+        <img class="mission-scene" src="${sceneUrl}" alt="" />
         <span class="mission-tag" style="background:${zone.soft}; color:${zone.color}">${TYPE_LABEL[cell.type] ?? ''}</span>
         <h2 class="mission-title">${cell.title}</h2>
         <p class="mission-scenario">${cell.scenario}</p>
