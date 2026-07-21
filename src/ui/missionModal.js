@@ -46,12 +46,14 @@ export function showMission(root, cell, { onResolve, player }) {
 
   root.innerHTML = `
     <div class="overlay dim">
-      <div class="panel mission-panel">
+      <div class="panel mission-panel" style="--zone-color:${zone.color}; --zone-soft:${zone.soft};">
         <img class="mission-scene" src="${sceneUrl}" alt="" />
-        <span class="mission-tag" style="background:${zone.soft}; color:${zone.color}">${TYPE_LABEL[cell.type] ?? ''}</span>
-        <h2 class="mission-title">${cell.title}</h2>
-        <p class="mission-scenario">${cell.scenario}</p>
-        ${bodyHtml}
+        <span class="mission-ribbon" style="background:${zone.color};">${TYPE_LABEL[cell.type] ?? ''}</span>
+        <div class="mission-body">
+          <h2 class="mission-title">${cell.title}</h2>
+          <p class="mission-scenario">${cell.scenario}</p>
+          ${bodyHtml}
+        </div>
       </div>
     </div>
   `;

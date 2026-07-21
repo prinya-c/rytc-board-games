@@ -77,17 +77,29 @@ export function createTileTexture({ icon, color, soft, number, type }) {
 export function createDicePipTexture(value) {
   const { canvas, ctx } = ctx2d(200);
   const s = 200;
-  ctx.fillStyle = '#fdfaf3';
-  roundRectPath(ctx, 4, 4, s - 8, s - 8, 28);
+  const faceGrad = ctx.createRadialGradient(s * 0.35, s * 0.3, 10, s * 0.5, s * 0.5, s * 0.75);
+  faceGrad.addColorStop(0, '#ffffff');
+  faceGrad.addColorStop(1, '#f3ede0');
+  ctx.fillStyle = faceGrad;
+  roundRectPath(ctx, 2, 2, s - 4, s - 4, 34);
   ctx.fill();
-  ctx.strokeStyle = '#d8cfae';
-  ctx.lineWidth = 4;
-  ctx.stroke();
 
   const pip = (x, y) => {
+    const pipGrad = ctx.createRadialGradient(x - 5, y - 5, 1, x, y, 17);
+    if (value === 1) {
+      pipGrad.addColorStop(0, '#ef6b7e');
+      pipGrad.addColorStop(1, '#c93752');
+    } else {
+      pipGrad.addColorStop(0, '#4a4a4a');
+      pipGrad.addColorStop(1, '#1c1c1c');
+    }
     ctx.beginPath();
     ctx.arc(x, y, 16, 0, Math.PI * 2);
-    ctx.fillStyle = value === 1 ? '#d8465f' : '#2a2a2a';
+    ctx.fillStyle = pipGrad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - 5, y - 5, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.fill();
   };
   const L = 46, C = 100, R = 154;
