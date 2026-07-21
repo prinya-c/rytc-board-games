@@ -93,7 +93,7 @@ export function createBoardScene(container) {
   // Cinematic zoom onto a cell when a token lands, then back out to the
   // overview before the mission popup opens — a beat that shows off which
   // cell was landed on without permanently changing the player's view.
-  function focusOnCell(cellId, { holdMs = 550, zoomDistance = 3.4, duration = 420, onDone } = {}) {
+  function focusOnCell(cellId, { holdMs = 1100, zoomDistance = 3.4, duration = 750, onDone } = {}) {
     const overviewCamPos = camera.position.clone();
     const overviewTarget = controls.target.clone();
     const savedMinDistance = controls.minDistance;
