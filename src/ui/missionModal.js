@@ -52,24 +52,55 @@ export function showMission(root, cell, { onResolve, player }) {
         <div class="mission-body">
           <h2 class="mission-title">${cell.title}</h2>
           <p class="mission-scenario">${cell.scenario}</p>
-          ${bodyHtml}
+          <div id="mission-dynamic">${bodyHtml}</div>
         </div>
       </div>
     </div>
   `;
 
+  const dynamic = root.querySelector('#mission-dynamic');
+
   if (cell.options) {
     root.querySelectorAll('.mission-option').forEach((btn) => {
       btn.addEventListener('click', () => {
         const opt = cell.options[Number(btn.dataset.idx)];
-        close();
-        onResolve(opt);
+        showFeedback(opt);
       });
     });
   } else {
     root.querySelector('#mission-continue').addEventListener('click', () => {
       close();
       onResolve(null);
+    });
+  }
+
+  function showFeedback(opt) {
+    const badgesHtml = Object.entries(opt.scores || {}).map(([key, val]) => {
+      const z = ZONES[key];
+      if (!z) return '';
+      const sign = val > 0 ? '+' : '';
+      return `<span class="score-badge" style="border-color:${z.color}; color:${z.color};">${z.label} ${sign}${val}</span>`;
+    }).join('');
+
+    dynamic.innerHTML = `
+      <div class="mission-feedback">
+        <div class="feedback-head"><span>✅</span><span>บันทึกผลภารกิจสำเร็จ!</span></div>
+        <div class="feedback-quote">
+          <span class="quote-label">คุณเลือก</span>
+          <p>"${opt.text}"</p>
+        </div>
+        ${opt.reason ? `
+        <div class="feedback-reason">
+          <p class="reason-label">🔎 เชื่อมโยงสู่เส้นทางอาชีพ</p>
+          <p class="reason-text">${opt.reason}</p>
+        </div>` : ''}
+        ${badgesHtml ? `<div class="score-badges">${badgesHtml}</div>` : ''}
+        <button type="button" class="btn btn-primary" id="mission-continue" style="margin-top:16px;">เดินหน้าต่อ</button>
+      </div>
+    `;
+    dynamic.querySelector('#mission-continue').addEventListener('click', () => {
+      close();
+      onResolve(opt);
     });
   }
 
