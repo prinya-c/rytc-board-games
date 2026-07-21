@@ -67,7 +67,9 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
       onDone: () => {
         player.position = to;
         syncHud(steps);
-        setTimeout(() => landOnCell(player, token), SETTLE_DELAY);
+        setTimeout(() => {
+          scene.focusOnCell(to, { onDone: () => landOnCell(player, token) });
+        }, SETTLE_DELAY);
       },
     });
   }
