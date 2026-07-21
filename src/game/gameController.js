@@ -3,7 +3,7 @@ import { createToken, placeTokenAtCell, animateTokenMove } from '../scene/tokens
 import { createDice, rollDiceAnimation } from '../scene/dice.js';
 import { getCell, BOARD_SIZE } from './cells.js';
 import { ZONES } from './zones.js';
-import { applyOption, boostTopCategory } from './scoring.js';
+import { applyOption } from './scoring.js';
 import { renderHud } from '../ui/hud.js';
 import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
@@ -101,7 +101,7 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
         player,
         onResolve: (opt) => {
           if (opt) {
-            player.score = applyOption(player.score, opt, cell.weight || 1);
+            player.score = applyOption(player.score, opt);
           }
           endTurn();
         },
@@ -109,55 +109,7 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
       return;
     }
 
-    // event / check mechanics with no direct options
-    if (cell.mechanic === 'rollAgain') {
-      showMission(uiRoot, cell, {
-        player,
-        onResolve: () => {
-          busy = false;
-          syncHud();
-        },
-      });
-      return;
-    }
-
-    if (cell.mechanic === 'bonusTopCategory') {
-      player.score = boostTopCategory(player.score, 2);
-      showMission(uiRoot, cell, { player, onResolve: () => endTurn() });
-      return;
-    }
-
-    if (cell.mechanic === 'swapOrBoost') {
-      showMission(uiRoot, cell, {
-        player,
-        onResolve: () => {
-          if (players.length > 1) {
-            const others = players.map((_, i) => i).filter((i) => i !== currentIndex);
-            const swapWith = others[Math.floor(Math.random() * others.length)];
-            const otherPlayer = players[swapWith];
-            const otherToken = tokens[swapWith];
-            const tmp = player.position;
-            player.position = otherPlayer.position;
-            otherPlayer.position = tmp;
-            placeTokenAtCell(token, player.position);
-            placeTokenAtCell(otherToken, otherPlayer.position);
-            endTurn();
-          } else {
-            const from = player.position;
-            const to = Math.min(from + 2, BOARD_SIZE);
-            animateTokenMove(token, from, to, {
-              onDone: () => {
-                player.position = to;
-                setTimeout(() => landOnCell(player, token), SETTLE_DELAY);
-              },
-            });
-          }
-        },
-      });
-      return;
-    }
-
-    // plain checkpoint / start with no special mechanic
+    // start cell: no options, just acknowledge and move on
     showMission(uiRoot, cell, { player, onResolve: () => endTurn() });
   }
 

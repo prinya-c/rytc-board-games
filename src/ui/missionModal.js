@@ -1,13 +1,10 @@
 import { ZONES } from '../game/zones.js';
-import { computeProfile } from '../game/scoring.js';
 import { renderSceneDataUrl } from './sceneArt.js';
 
 const TYPE_LABEL = {
   A: 'ค้นหาตัวเอง',
   B: 'ค้นหาอาชีพ',
   C: 'ภารกิจผสาน',
-  event: 'เหตุการณ์พิเศษ',
-  check: 'จุดพักสรุปผล',
   start: 'เริ่มเกม',
   finish: 'เส้นชัย',
 };
@@ -22,15 +19,6 @@ export function showMission(root, cell, { onResolve, player }) {
     </button>
   `).join('');
 
-  const checkpointBars = cell.mechanic === 'checkpoint' && player
-    ? `<div class="bars" style="margin-top:14px;">${computeProfile(player.score).map((p) => `
-        <div class="bar-row">
-          <span class="bar-label" style="color:${p.zone.color}">${p.zone.label}</span>
-          <span class="bar-track"><span class="bar-fill" style="width:${p.percent}%; background:${p.zone.color}"></span></span>
-          <span class="bar-val">${p.percent}%</span>
-        </div>`).join('')}</div>`
-    : '';
-
   const mechMsg = mechanicText(cell);
   const mechanicBox = mechMsg && mechMsg !== cell.scenario
     ? `<div class="mission-mechanic">${mechMsg}</div>`
@@ -39,7 +27,6 @@ export function showMission(root, cell, { onResolve, player }) {
   const bodyHtml = cell.options
     ? `<div class="mission-options">${optionsHtml}</div>`
     : `${mechanicBox}
-       ${checkpointBars}
        <button type="button" class="btn btn-primary" id="mission-continue" style="margin-top:16px;">ไปต่อ</button>`;
 
   const sceneUrl = renderSceneDataUrl(cell, player?.color);
