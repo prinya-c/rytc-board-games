@@ -8,6 +8,10 @@ import { renderHud } from '../ui/hud.js';
 import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
 
+// Pause after the token finishes hopping so players see it settle on the
+// tile before the mission popup covers the board.
+const SETTLE_DELAY = 400;
+
 export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
   const scene = createBoardScene(sceneContainer);
   const dice = createDice();
@@ -63,7 +67,7 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
       onDone: () => {
         player.position = to;
         syncHud(steps);
-        landOnCell(player, token);
+        setTimeout(() => landOnCell(player, token), SETTLE_DELAY);
       },
     });
   }
@@ -144,7 +148,7 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot }) {
             animateTokenMove(token, from, to, {
               onDone: () => {
                 player.position = to;
-                landOnCell(player, token);
+                setTimeout(() => landOnCell(player, token), SETTLE_DELAY);
               },
             });
           }
