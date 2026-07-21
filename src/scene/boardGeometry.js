@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CELLS } from '../game/cells.js';
 import { ZONES } from '../game/zones.js';
 import { cellGridPosition, GRID_MAX, isCorner } from '../game/layout.js';
-import { createTileTexture, createBoardBackdropTexture, createEmblemTexture, createTitlePlaqueTexture } from './textures.js';
+import { createTileTexture, createBoardBackdropTexture, createEmblemTexture, createFacadeTexture, createTitlePlaqueTexture } from './textures.js';
 
 export const CELL_SIZE = 1.2;
 export const TILE_HEIGHT = 0.3;
@@ -74,32 +74,135 @@ function iconFor(cell) {
   return cell.options?.[0]?.icon ?? '❓';
 }
 
+// Rooftop details that hint at each industry, mounted on top of the tower.
+function buildRoofAccent(key, zone) {
+  const group = new THREE.Group();
+
+  if (key === 'dig') {
+    const rod = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.02, 0.34, 8),
+      new THREE.MeshStandardMaterial({ color: '#cfd6e0', roughness: 0.4, metalness: 0.5 }),
+    );
+    rod.position.y = 0.17;
+    group.add(rod);
+    const beacon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045, 12, 10),
+      new THREE.MeshStandardMaterial({ color: '#8fb2ff', emissive: '#4f7dff', emissiveIntensity: 1.4, roughness: 0.3 }),
+    );
+    beacon.position.y = 0.35;
+    group.add(beacon);
+  } else if (key === 'rob') {
+    const stack = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.07, 0.24, 10),
+      new THREE.MeshStandardMaterial({ color: '#9a9a9a', roughness: 0.5, metalness: 0.4 }),
+    );
+    stack.position.set(-0.13, 0.12, 0);
+    group.add(stack);
+    const dish = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 0.02, 16),
+      new THREE.MeshStandardMaterial({ color: '#e8e8e8', roughness: 0.4, metalness: 0.3 }),
+    );
+    dish.position.set(0.12, 0.16, 0);
+    dish.rotation.z = 0.5;
+    group.add(dish);
+    const light = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 10, 8),
+      new THREE.MeshStandardMaterial({ color: '#ffb27a', emissive: '#ff8a3a', emissiveIntensity: 1.3 }),
+    );
+    light.position.set(-0.13, 0.26, 0);
+    group.add(light);
+  } else if (key === 'log') {
+    const cupola = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.18, 0.18, 16),
+      new THREE.MeshStandardMaterial({ map: createFacadeTexture(zone.color, 2, 6), roughness: 0.5 }),
+    );
+    cupola.position.y = 0.09;
+    group.add(cupola);
+    const dish = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, 0.015, 16),
+      new THREE.MeshStandardMaterial({ color: '#f4f4f4', roughness: 0.35, metalness: 0.2, side: THREE.DoubleSide }),
+    );
+    dish.position.set(0, 0.24, 0);
+    dish.rotation.x = 0.9;
+    group.add(dish);
+  } else if (key === 'bio') {
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshPhysicalMaterial({
+        color: '#bdf0a8', transparent: true, opacity: 0.65, roughness: 0.2, transmission: 0.15, metalness: 0,
+      }),
+    );
+    group.add(dome);
+  } else if (key === 'med') {
+    const crossMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.4 });
+    const vertical = new THREE.Mesh(new RoundedBoxGeometry(0.07, 0.28, 0.07, 1, 0.02), crossMat);
+    vertical.position.y = 0.18;
+    group.add(vertical);
+    const horizontal = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.07, 0.07, 1, 0.02), crossMat);
+    horizontal.position.y = 0.22;
+    group.add(horizontal);
+  }
+
+  return group;
+}
+
+const BUILDING_HEIGHT = { dig: 1.15, rob: 0.82, log: 0.7, bio: 0.78, med: 1.0 };
+
+function buildZoneBuilding(key) {
+  const zone = ZONES[key];
+  const group = new THREE.Group();
+
+  // base plaza with the zone icon + label, as before
+  const emblemSize = CELL_SIZE * 1.1;
+  const tex = createEmblemTexture({
+    icon: { dig: '💻', rob: '🦾', log: '✈️', bio: '🧪', med: '🩺' }[key],
+    label: zone.label,
+    color: zone.color,
+    soft: zone.soft,
+  });
+  const plazaGeo = new THREE.CylinderGeometry(emblemSize / 2, emblemSize / 2, 0.16, 32);
+  const plazaMat = [
+    new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.7 }),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }),
+    new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.7 }),
+  ];
+  const plaza = new THREE.Mesh(plazaGeo, plazaMat);
+  plaza.position.y = 0.08;
+  plaza.castShadow = true;
+  plaza.receiveShadow = true;
+  group.add(plaza);
+
+  // tower rising from the plaza's edge so the label stays visible
+  const h = BUILDING_HEIGHT[key];
+  const footprint = 0.42;
+  const facadeTex = createFacadeTexture(zone.color);
+  const facadeMat = new THREE.MeshStandardMaterial({ map: facadeTex, roughness: 0.6 });
+  const roofMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.5 });
+  const towerGeo = new RoundedBoxGeometry(footprint, h, footprint, 2, footprint * 0.12);
+  const towerMats = [facadeMat, facadeMat, roofMat, roofMat, facadeMat, facadeMat];
+  const tower = new THREE.Mesh(towerGeo, towerMats);
+  tower.position.set(-emblemSize * 0.18, 0.16 + h / 2, -emblemSize * 0.18);
+  tower.castShadow = true;
+  tower.receiveShadow = true;
+  group.add(tower);
+
+  const accent = buildRoofAccent(key, zone);
+  accent.position.set(tower.position.x, 0.16 + h, tower.position.z);
+  group.add(accent);
+
+  return group;
+}
+
 function buildCenterEmblems() {
   const group = new THREE.Group();
   const zoneKeys = ['dig', 'rob', 'log', 'bio', 'med'];
   const radius = CELL_SIZE * 1.6;
-  const emblemSize = CELL_SIZE * 1.15;
 
   zoneKeys.forEach((key, i) => {
     const angle = (i / zoneKeys.length) * Math.PI * 2 - Math.PI / 2;
-    const zone = ZONES[key];
-    const tex = createEmblemTexture({
-      icon: { dig: '💻', rob: '🦾', log: '✈️', bio: '🧪', med: '🩺' }[key],
-      label: zone.label,
-      color: zone.color,
-      soft: zone.soft,
-    });
-    const geo = new THREE.CylinderGeometry(emblemSize / 2, emblemSize / 2, 0.2, 32);
-    const mat = [
-      new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.7 }),
-      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }),
-      new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.7 }),
-    ];
-    const disc = new THREE.Mesh(geo, mat);
-    disc.position.set(Math.cos(angle) * radius, 0.1, Math.sin(angle) * radius);
-    disc.castShadow = true;
-    disc.receiveShadow = true;
-    group.add(disc);
+    const building = buildZoneBuilding(key);
+    building.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+    group.add(building);
   });
 
   // upright signpost with the game title, standing in the center

@@ -1,11 +1,11 @@
 // EEC New S-Curve career zones used throughout the game.
 export const ZONES = {
-  start: { key: 'start', label: 'START', color: '#FFD54F', soft: '#FFF6DA' },
+  start: { key: 'start', label: 'START', color: '#FFC72C', soft: '#FFF6DA' },
   dig: {
     key: 'dig',
     label: 'Digital',
     name: 'มหานครดิจิทัล',
-    color: '#3A6CF0',
+    color: '#2F5CFF',
     soft: '#DCE6FF',
     careers: ['นักพัฒนาแอป', 'Data Analyst', 'UX/UI Designer', 'Cybersecurity'],
   },
@@ -13,7 +13,7 @@ export const ZONES = {
     key: 'rob',
     label: 'Robotics',
     name: 'โรงงานแห่งอนาคต',
-    color: '#E07A2C',
+    color: '#F0731A',
     soft: '#FFE6D1',
     careers: ['วิศวกรหุ่นยนต์', 'ช่างเทคนิคระบบอัตโนมัติ', 'นักออกแบบแขนกล'],
   },
@@ -21,7 +21,7 @@ export const ZONES = {
     key: 'log',
     label: 'Logistics',
     name: 'ท่าอากาศยาน & โลจิสติกส์',
-    color: '#189C92',
+    color: '#00A99D',
     soft: '#D2F2EE',
     careers: ['นักบิน', 'นักวางแผนโลจิสติกส์', 'ช่างซ่อมบำรุงอากาศยาน'],
   },
@@ -29,7 +29,7 @@ export const ZONES = {
     key: 'bio',
     label: 'Bio-chem',
     name: 'ห้องแล็บสีเขียว',
-    color: '#4E9E3E',
+    color: '#3FAE2A',
     soft: '#DEF2D6',
     careers: ['นักวิจัยไบโอพลาสติก', 'นักวิทยาศาสตร์เคมี', 'วิศวกรกระบวนการผลิต'],
   },
@@ -37,11 +37,11 @@ export const ZONES = {
     key: 'med',
     label: 'Medical',
     name: 'ศูนย์การแพทย์แห่งอนาคต',
-    color: '#D8465F',
+    color: '#EF3A5C',
     soft: '#FBDCE1',
     careers: ['แพทย์', 'นักเทคนิคการแพทย์', 'นักกายภาพบำบัด'],
   },
-  finish: { key: 'finish', label: 'FINISH', color: '#FFD54F', soft: '#FFF6DA' },
+  finish: { key: 'finish', label: 'FINISH', color: '#FFC72C', soft: '#FFF6DA' },
 };
 
 export const ZONE_ORDER = ['dig', 'rob', 'log', 'bio', 'med'];

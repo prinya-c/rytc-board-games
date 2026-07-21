@@ -123,14 +123,14 @@ export function createBoardBackdropTexture(gridSide, cellSize) {
   const s = 1024;
   const { canvas, ctx } = ctx2d(s);
   const grad = ctx.createLinearGradient(0, 0, 0, s);
-  grad.addColorStop(0, '#bfe6ff');
-  grad.addColorStop(0.45, '#dff4e0');
-  grad.addColorStop(1, '#bfe3a8');
+  grad.addColorStop(0, '#7cc8f7');
+  grad.addColorStop(0.45, '#bdedb0');
+  grad.addColorStop(1, '#7fd65c');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, s, s);
 
   // soft clouds
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
   const clouds = [[130, 110, 46], [190, 130, 34], [820, 150, 40], [900, 190, 28], [760, 90, 30]];
   clouds.forEach(([x, y, r]) => {
     ctx.beginPath();
@@ -141,10 +141,10 @@ export function createBoardBackdropTexture(gridSide, cellSize) {
   });
 
   // scattered ground dots (grassy texture)
-  for (let i = 0; i < 260; i++) {
+  for (let i = 0; i < 320; i++) {
     const x = Math.random() * s;
     const y = s * 0.55 + Math.random() * s * 0.45;
-    ctx.fillStyle = `rgba(60,140,70,${0.06 + Math.random() * 0.08})`;
+    ctx.fillStyle = `rgba(30,120,40,${0.08 + Math.random() * 0.12})`;
     ctx.beginPath();
     ctx.arc(x, y, 3 + Math.random() * 5, 0, Math.PI * 2);
     ctx.fill();
@@ -175,6 +175,41 @@ export function createEmblemTexture({ icon, label, color, soft }) {
   ctx.font = '700 26px "Noto Sans Thai", system-ui, sans-serif';
   ctx.fillStyle = color;
   ctx.fillText(label, s / 2, s / 2 + 62);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+export function createFacadeTexture(color, rows = 5, cols = 4) {
+  const s = 256;
+  const { canvas, ctx } = ctx2d(s);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, s, s);
+  // subtle vertical shading for a wall-like feel
+  const shade = ctx.createLinearGradient(0, 0, s, 0);
+  shade.addColorStop(0, 'rgba(0,0,0,0.12)');
+  shade.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+  shade.addColorStop(1, 'rgba(0,0,0,0.12)');
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, s, s);
+
+  const padX = s * 0.12;
+  const padY = s * 0.1;
+  const cellW = (s - padX * 2) / cols;
+  const cellH = (s - padY * 2) / rows;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const wx = padX + c * cellW + cellW * 0.16;
+      const wy = padY + r * cellH + cellH * 0.18;
+      const ww = cellW * 0.68;
+      const wh = cellH * 0.6;
+      const lit = Math.random() > 0.35;
+      ctx.fillStyle = lit ? 'rgba(255,246,200,0.88)' : 'rgba(20,30,45,0.35)';
+      roundRectPath(ctx, wx, wy, ww, wh, Math.min(ww, wh) * 0.22);
+      ctx.fill();
+    }
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
