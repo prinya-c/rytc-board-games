@@ -129,17 +129,6 @@ export function createBoardBackdropTexture(gridSide, cellSize) {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, s, s);
 
-  // soft clouds
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  const clouds = [[130, 110, 46], [190, 130, 34], [820, 150, 40], [900, 190, 28], [760, 90, 30]];
-  clouds.forEach(([x, y, r]) => {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.arc(x + r * 0.9, y + 6, r * 0.75, 0, Math.PI * 2);
-    ctx.arc(x - r * 0.9, y + 8, r * 0.65, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
   // scattered ground dots (grassy texture)
   for (let i = 0; i < 320; i++) {
     const x = Math.random() * s;

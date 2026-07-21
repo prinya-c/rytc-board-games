@@ -267,10 +267,10 @@ function buildLandmarkTower() {
   // four name signs ringing the upper deck so the title reads correctly
   // from whichever side the camera is orbited to
   const plaqueTex = createTitlePlaqueTexture('ตะลุยโลกอาชีพ', 'EEC New S-Curve Career Quest');
-  const signW = CELL_SIZE * 0.62;
-  const signH = CELL_SIZE * 0.23;
-  const signRadius = 0.36;
-  const signY = height * 0.8;
+  const signW = CELL_SIZE * 1.3;
+  const signH = CELL_SIZE * 0.46;
+  const signRadius = 0.58;
+  const signY = height * 0.62;
   for (let i = 0; i < 4; i++) {
     const angle = (i * Math.PI) / 2;
     const plaqueMat = new THREE.MeshStandardMaterial({

@@ -170,27 +170,6 @@ function buildMotorcycle(color, accent = '#1a1a1a') {
 
 // ---------------- Birds ----------------
 
-function buildBird(color) {
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
-
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), mat);
-  group.add(body);
-
-  const wingGeo = new THREE.ConeGeometry(0.011, 0.08, 4);
-  const wingL = new THREE.Mesh(wingGeo, mat);
-  wingL.rotation.z = Math.PI / 2;
-  wingL.position.set(-0.04, 0, 0);
-  group.add(wingL);
-  const wingR = new THREE.Mesh(wingGeo, mat);
-  wingR.rotation.z = -Math.PI / 2;
-  wingR.position.set(0.04, 0, 0);
-  group.add(wingR);
-
-  group.userData.wings = [wingL, wingR];
-  return group;
-}
-
 // ---------------- Balloons ----------------
 
 function buildBalloon(scale, palette) {
@@ -270,9 +249,6 @@ export function createAnimatedScenery(arenaRadius, outerRadius) {
   addLoop(buildMotorcycle('#FFC72C', '#333333'), { radius: arenaRadius * 0.945, height: 0, speed: 0.3, phase: Math.PI * 0.15 });
   addLoop(buildSportsCar('#A24FE0'), { radius: arenaRadius * 0.97, height: 0, speed: 0.22, phase: Math.PI * 1.1 });
 
-  addLoop(buildBird('#3a3a3a'), { radius: outerRadius * 0.55, height: 2.3, speed: 0.34, phase: 0 });
-  addLoop(buildBird('#7a5a3a'), { radius: outerRadius * 0.7, height: 2.6, speed: -0.28, phase: Math.PI });
-
   addLoop(buildBalloon(0.85, BALLOON_PALETTES[0]), {
     radius: outerRadius * 0.6, height: 3.5, speed: 0.05, phase: Math.PI * 0.3, bobAmp: 0.16, bobSpeed: 0.4, spin: false,
   });
@@ -283,11 +259,14 @@ export function createAnimatedScenery(arenaRadius, outerRadius) {
     radius: outerRadius * 0.42, height: 3.1, speed: 0.065, phase: Math.PI * 1.0, bobAmp: 0.13, bobSpeed: 0.48, spin: false,
   });
 
+  // kept high and well beyond the tray so they read as sky, not as
+  // something sitting on the ground, even when their orbit swings near
+  // the camera
   const cloudSpots = [
-    { idx: 0, radius: outerRadius * 0.72, height: 4.4, speed: 0.018, phase: Math.PI * 0.1, scale: 1.1 },
-    { idx: 1, radius: outerRadius * 0.9, height: 4.9, speed: -0.014, phase: Math.PI * 0.9, scale: 1.4 },
-    { idx: 2, radius: outerRadius * 0.55, height: 5.3, speed: 0.022, phase: Math.PI * 1.5, scale: 0.9 },
-    { idx: 3, radius: outerRadius * 1.05, height: 4.6, speed: -0.017, phase: Math.PI * 0.55, scale: 1.2 },
+    { idx: 0, radius: outerRadius * 1.15, height: 7.0, speed: 0.014, phase: Math.PI * 0.1, scale: 1.2 },
+    { idx: 1, radius: outerRadius * 1.3, height: 7.6, speed: -0.011, phase: Math.PI * 0.9, scale: 1.5 },
+    { idx: 2, radius: outerRadius * 1.0, height: 8.2, speed: 0.017, phase: Math.PI * 1.5, scale: 1.0 },
+    { idx: 3, radius: outerRadius * 1.45, height: 7.3, speed: -0.013, phase: Math.PI * 0.55, scale: 1.3 },
   ];
   cloudSpots.forEach(({ idx, radius, height, speed, phase, scale }) => {
     addLoop(buildCloud(idx, scale), { radius, height, speed, phase, bobAmp: 0.06, bobSpeed: 0.25, spin: false });
