@@ -1,9 +1,9 @@
 import { createBoardScene } from '../scene/boardScene.js';
-import { createToken, placeTokenAtCell, animateTokenMove } from '../scene/tokens.js';
+import { createToken, placeTokenAtCell, animateTokenMove, transformTokenForCareer } from '../scene/tokens.js';
 import { createDice, rollDiceAnimation } from '../scene/dice.js';
 import { getCell, BOARD_SIZE } from './cells.js';
 import { ZONES } from './zones.js';
-import { applyOption } from './scoring.js';
+import { applyOption, computeTop3 } from './scoring.js';
 import { renderHud } from '../ui/hud.js';
 import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
@@ -67,7 +67,16 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: exi
       onDone: () => {
         player.position = to;
         syncHud(steps);
-        scene.endTokenFollow(to, { onDone: () => landOnCell(player, token) });
+        const cell = getCell(to);
+        if (cell.type === 'finish') {
+          const top1 = computeTop3(player.score)[0];
+          transformTokenForCareer(token, top1.key);
+          scene.celebrateFinish(to, ZONES[top1.key].color, {
+            onDone: () => landOnCell(player, token),
+          });
+        } else {
+          scene.endTokenFollow(to, { onDone: () => landOnCell(player, token) });
+        }
       },
     });
   }

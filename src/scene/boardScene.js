@@ -140,5 +140,112 @@ export function createBoardScene(container) {
     });
   }
 
-  return { scene, camera, renderer, controls, board, beginTokenFollow, trackTokenPosition, endTokenFollow };
+  // Hero reveal for the token's career transformation at FINISH: a tighter
+  // zoom than the normal per-cell focus, a slow orbit around it while a
+  // glowing ring + warm highlight light make it unmistakably the center of
+  // attention, then a pan back to the overview.
+  function celebrateFinish(cellId, color, { zoomDuration = 800, orbitDuration = 2400, returnDuration = 800, onDone } = {}) {
+    if (!followState) {
+      onDone?.();
+      return;
+    }
+    const cellPos = cellWorldPosition(cellId);
+    const lookAt = cellPos.clone().add(new THREE.Vector3(0, 0.5, 0));
+    const startCamPos = camera.position.clone();
+    const startTarget = controls.target.clone();
+
+    controls.minDistance = Math.min(controls.minDistance, 1.6);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.35, 0.62, 40),
+      new THREE.MeshBasicMaterial({
+        color, transparent: true, opacity: 0, side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(cellPos.x, cellPos.y + 0.02, cellPos.z);
+    ring.scale.setScalar(0.4);
+    scene.add(ring);
+
+    const highlight = new THREE.PointLight(color, 0, 6, 2);
+    highlight.position.set(cellPos.x, cellPos.y + 1.6, cellPos.z);
+    scene.add(highlight);
+
+    const closeRadius = 2.1;
+    const closeHeight = lookAt.y + 1.25;
+    const dir0 = startCamPos.clone().sub(cellPos);
+    const startAngle = Math.atan2(dir0.z, dir0.x);
+    const closeCamPos = new THREE.Vector3(
+      cellPos.x + Math.cos(startAngle) * closeRadius,
+      closeHeight,
+      cellPos.z + Math.sin(startAngle) * closeRadius,
+    );
+
+    const introStart = performance.now();
+    function introTick(now) {
+      const eased = easeInOutQuad(Math.min(1, (now - introStart) / zoomDuration));
+      camera.position.lerpVectors(startCamPos, closeCamPos, eased);
+      controls.target.lerpVectors(startTarget, lookAt, eased);
+      ring.scale.setScalar(0.4 + eased * 0.8);
+      ring.material.opacity = 0.55 * eased;
+      highlight.intensity = 1.8 * eased;
+      if (eased < 1) {
+        requestAnimationFrame(introTick);
+      } else {
+        orbit();
+      }
+    }
+    requestAnimationFrame(introTick);
+
+    function orbit() {
+      const orbitStart = performance.now();
+      const sweep = Math.PI * 0.34;
+      function orbitTick(now) {
+        const eased = easeInOutQuad(Math.min(1, (now - orbitStart) / orbitDuration));
+        const angle = startAngle + sweep * eased;
+        camera.position.set(
+          cellPos.x + Math.cos(angle) * closeRadius,
+          closeHeight,
+          cellPos.z + Math.sin(angle) * closeRadius,
+        );
+        controls.target.copy(lookAt);
+        ring.rotation.z += 0.01;
+        if (eased < 1) {
+          requestAnimationFrame(orbitTick);
+        } else {
+          outro();
+        }
+      }
+      requestAnimationFrame(orbitTick);
+    }
+
+    function outro() {
+      const { overviewCamPos, overviewTarget, savedMinDistance } = followState;
+      const fromCamPos = camera.position.clone();
+      const fromTarget = controls.target.clone();
+      const outroStart = performance.now();
+      function outroTick(now) {
+        const eased = easeInOutQuad(Math.min(1, (now - outroStart) / returnDuration));
+        camera.position.lerpVectors(fromCamPos, overviewCamPos, eased);
+        controls.target.lerpVectors(fromTarget, overviewTarget, eased);
+        ring.material.opacity = 0.55 * (1 - eased);
+        ring.scale.setScalar(1.2 - eased * 0.4);
+        highlight.intensity = 1.8 * (1 - eased);
+        if (eased < 1) {
+          requestAnimationFrame(outroTick);
+        } else {
+          scene.remove(ring);
+          scene.remove(highlight);
+          controls.minDistance = savedMinDistance;
+          controls.enabled = true;
+          followState = null;
+          onDone?.();
+        }
+      }
+      requestAnimationFrame(outroTick);
+    }
+  }
+
+  return { scene, camera, renderer, controls, board, beginTokenFollow, trackTokenPosition, endTokenFollow, celebrateFinish };
 }

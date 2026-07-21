@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { cellWorldPosition } from './boardGeometry.js';
+import { ZONES } from '../game/zones.js';
 
 const TOKEN_OFFSETS = [
   [-0.22, -0.22],
@@ -105,7 +106,170 @@ export function createToken(color, index) {
   group.add(hair);
 
   group.userData.offset = TOKEN_OFFSETS[index] ?? [0, 0];
+  group.userData.shirtMat = shirtMat;
+  group.userData.hairGroup = hair;
   return group;
+}
+
+// Five career "costumes" — one per EEC zone — swapped onto the token the
+// moment a player reaches FINISH, so their pawn visibly becomes whichever
+// industry they scored highest in.
+function buildDigitalCostume(zone) {
+  const group = new THREE.Group();
+  const frameMat = new THREE.MeshStandardMaterial({ color: '#2A2118', roughness: 0.35 });
+  const lensGeo = new THREE.TorusGeometry(0.026, 0.006, 8, 16);
+  [-0.05, 0.05].forEach((ex) => {
+    const lens = new THREE.Mesh(lensGeo, frameMat);
+    lens.position.set(ex, 0.465, 0.132);
+    group.add(lens);
+  });
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.004, 0.004), frameMat);
+  bridge.position.set(0, 0.465, 0.132);
+  group.add(bridge);
+
+  const laptop = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.014, 0.1), frameMat);
+  const screenMat = new THREE.MeshStandardMaterial({
+    color: zone.color, emissive: zone.color, emissiveIntensity: 0.9, roughness: 0.3,
+  });
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.01), screenMat);
+  screen.position.set(0, 0.05, -0.045);
+  screen.rotation.x = -0.35;
+  laptop.add(base, screen);
+  laptop.position.set(0, 0.2, 0.14);
+  laptop.rotation.x = -0.25;
+  group.add(laptop);
+  return group;
+}
+
+function buildRoboticsCostume(zone) {
+  const group = new THREE.Group();
+  const hatMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.4 });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.148, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), hatMat);
+  dome.position.y = 0.49;
+  group.add(dome);
+  const brim = new THREE.Mesh(new THREE.TorusGeometry(0.145, 0.014, 8, 24), hatMat);
+  brim.rotation.x = Math.PI / 2;
+  brim.position.y = 0.455;
+  group.add(brim);
+
+  const toolMat = new THREE.MeshStandardMaterial({ color: '#8A93A1', roughness: 0.35, metalness: 0.6 });
+  const wrench = new THREE.Group();
+  wrench.add(new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.09, 0.012), toolMat));
+  const head1 = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.008, 8, 12, Math.PI), toolMat);
+  head1.position.y = 0.05;
+  wrench.add(head1);
+  wrench.position.set(0.19, 0.17, 0.05);
+  wrench.rotation.z = -0.7;
+  group.add(wrench);
+  return group;
+}
+
+function buildLogisticsCostume(zone) {
+  const group = new THREE.Group();
+  const capMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.4 });
+  const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.148, 0.15, 0.05, 16), capMat);
+  capTop.position.y = 0.5;
+  group.add(capTop);
+  const brim = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.09), capMat);
+  brim.position.set(0, 0.475, 0.09);
+  group.add(brim);
+
+  const wingMat = new THREE.MeshStandardMaterial({ color: '#E8C349', roughness: 0.3, metalness: 0.5 });
+  [-1, 1].forEach((side) => {
+    const wing = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.075, 4), wingMat);
+    wing.position.set(side * 0.045, 0.3, 0.12);
+    wing.rotation.z = side * 1.15;
+    wing.rotation.x = 1.5;
+    group.add(wing);
+  });
+  return group;
+}
+
+function buildBioCostume(zone) {
+  const group = new THREE.Group();
+  const coatMat = new THREE.MeshStandardMaterial({ color: '#F5F5F0', roughness: 0.55 });
+  const coat = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.17, 6, 12), coatMat);
+  coat.position.y = 0.24;
+  group.add(coat);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.2, 0.01), new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.5 }));
+  stripe.position.set(0, 0.22, 0.13);
+  group.add(stripe);
+
+  const goggleMat = new THREE.MeshPhysicalMaterial({ color: zone.color, roughness: 0.2, transparent: true, opacity: 0.5 });
+  const goggles = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.03, 0.02), goggleMat);
+  goggles.position.set(0, 0.465, 0.135);
+  group.add(goggles);
+
+  const flask = new THREE.Group();
+  const flaskMat = new THREE.MeshPhysicalMaterial({ color: '#DCEFE6', roughness: 0.1, transparent: true, opacity: 0.55 });
+  flask.add(new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.05, 10, 1, true), flaskMat));
+  const liquid = new THREE.Mesh(
+    new THREE.SphereGeometry(0.022, 10, 8),
+    new THREE.MeshStandardMaterial({ color: zone.color, emissive: zone.color, emissiveIntensity: 0.6 }),
+  );
+  liquid.position.y = -0.012;
+  flask.add(liquid);
+  flask.position.set(0.19, 0.19, 0.03);
+  flask.rotation.z = -0.3;
+  group.add(flask);
+  return group;
+}
+
+function buildMedicalCostume(zone) {
+  const group = new THREE.Group();
+  const coatMat = new THREE.MeshStandardMaterial({ color: '#F5F5F0', roughness: 0.55 });
+  const coat = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.17, 6, 12), coatMat);
+  coat.position.y = 0.24;
+  group.add(coat);
+
+  const crossMat = new THREE.MeshStandardMaterial({ color: zone.color, roughness: 0.45 });
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.05, 0.01), crossMat);
+  const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.014, 0.01), crossMat);
+  crossV.position.set(0, 0.24, 0.135);
+  crossH.position.set(0, 0.24, 0.135);
+  group.add(crossV, crossH);
+
+  const tubeMat = new THREE.MeshStandardMaterial({ color: '#3A4048', roughness: 0.4 });
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.009, 8, 20, Math.PI * 1.3), tubeMat);
+  collar.position.set(0, 0.37, 0.02);
+  collar.rotation.x = Math.PI / 2.1;
+  group.add(collar);
+  const drop = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.1, 6), tubeMat);
+  drop.position.set(0, 0.28, 0.13);
+  group.add(drop);
+  const chestpiece = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), tubeMat);
+  chestpiece.position.set(0, 0.225, 0.13);
+  group.add(chestpiece);
+  return group;
+}
+
+const COSTUME_BUILDERS = {
+  dig: buildDigitalCostume,
+  rob: buildRoboticsCostume,
+  log: buildLogisticsCostume,
+  bio: buildBioCostume,
+  med: buildMedicalCostume,
+};
+
+export function transformTokenForCareer(token, zoneKey) {
+  if (token.userData.transformedZone === zoneKey) return;
+  const zone = ZONES[zoneKey];
+  const builder = COSTUME_BUILDERS[zoneKey];
+  if (!zone || !builder) return;
+
+  if (token.userData.costume) {
+    token.remove(token.userData.costume);
+  }
+  token.userData.shirtMat?.color.set(zone.color);
+  if (token.userData.hairGroup) {
+    token.userData.hairGroup.visible = zoneKey !== 'rob' && zoneKey !== 'log';
+  }
+
+  const costume = builder(zone);
+  token.add(costume);
+  token.userData.costume = costume;
+  token.userData.transformedZone = zoneKey;
 }
 
 export function placeTokenAtCell(token, cellId) {
