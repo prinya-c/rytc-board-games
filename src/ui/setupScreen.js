@@ -30,6 +30,7 @@ export function renderSetupScreen(root, { onStart }) {
     root.innerHTML = `
       <div class="overlay scenic">
         <div class="setup-hero">
+          <img class="rytc-logo" src="${import.meta.env.BASE_URL}images/rytc-logo.png" alt="Rayong Technical College" />
           <span class="setup-eyebrow">🚀 EEC New S-Curve Career Quest</span>
           <div class="zone-chip-row">${zoneChipsHtml}</div>
         </div>
