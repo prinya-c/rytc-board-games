@@ -4,6 +4,7 @@ import { createDice, rollDiceAnimation } from '../scene/dice.js';
 import { getCell, BOARD_SIZE } from './cells.js';
 import { ZONES } from './zones.js';
 import { applyOption, computeTop3 } from './scoring.js';
+import { generateDiceSequence } from './diceSequence.js';
 import { renderHud } from '../ui/hud.js';
 import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
@@ -21,6 +22,12 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: exi
     scene.board.add(token);
     return token;
   });
+
+  // Each player gets their own pre-determined roll sequence so that,
+  // regardless of the exact dice faces, they're guaranteed to land on at
+  // least 2 missions per EEC zone and at least 4 self-discovery missions
+  // before reaching FINISH. Individual rolls still show 1-6 like real dice.
+  const diceQueues = players.map(() => generateDiceSequence().diceQueue);
 
   let currentIndex = 0;
   let busy = false;
@@ -49,7 +56,8 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: exi
     if (busy) return;
     busy = true;
     syncHud();
-    const value = 1 + Math.floor(Math.random() * 6);
+    const queue = diceQueues[currentIndex];
+    const value = queue.length > 0 ? queue.shift() : 1 + Math.floor(Math.random() * 6);
     rollDiceAnimation(dice, value, {
       onDone: () => movePlayer(value),
     });
