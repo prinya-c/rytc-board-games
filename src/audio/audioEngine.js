@@ -1,17 +1,23 @@
-// All sound in this game is synthesized with the Web Audio API — no audio
-// files — matching the rest of the project's fully procedural approach
-// (canvas textures, generated geometry, etc).
+// UI/SFX are synthesized with the Web Audio API (no audio files). Background
+// music is the one exception — it plays the user-supplied track, looped,
+// through the same Web Audio graph so the mute toggle still controls it.
 
 const MUTE_KEY = 'talui-muted';
+const TRACK_URL = `${import.meta.env.BASE_URL}audio/bgm.mp3`;
 
 let ctx = null;
 let masterGain = null;
 let ambientGain = null;
 let sfxGain = null;
 let ambientStarted = false;
-let padVoices = [];
-let twinkleTimer = null;
+let trackSource = null;
 let muted = localStorage.getItem(MUTE_KEY) === '1';
+
+// Kick off the download immediately (doesn't need an AudioContext / user
+// gesture) so the ~6MB file is likely already in hand by the time the
+// player's first tap actually starts playback.
+let trackBytesPromise = fetch(TRACK_URL).then((r) => r.arrayBuffer());
+let decodedTrackPromise = null;
 
 function ensureContext() {
   if (!ctx) {
@@ -22,7 +28,7 @@ function ensureContext() {
     masterGain.connect(ctx.destination);
 
     ambientGain = ctx.createGain();
-    ambientGain.gain.value = 1;
+    ambientGain.gain.value = 0.55;
     ambientGain.connect(masterGain);
 
     sfxGain = ctx.createGain();
@@ -50,9 +56,9 @@ export function toggleMuted() {
   return muted;
 }
 
-// Starts audio + the ambient loop on the very first user gesture anywhere on
-// the page, satisfying browsers' autoplay policy without needing a dedicated
-// "play music" button.
+// Starts audio + the background track on the very first user gesture
+// anywhere on the page, satisfying browsers' autoplay policy without
+// needing a dedicated "play music" button.
 export function primeAudioOnFirstGesture() {
   const start = () => {
     ensureContext();
@@ -64,167 +70,36 @@ export function primeAudioOnFirstGesture() {
   window.addEventListener('keydown', start, { once: true });
 }
 
-// ---------------- ambient background loop ----------------
-// A soft, slowly-detuned pad chord as a bed, plus a generative sparse
-// "twinkle" layer of random pentatonic notes so it never feels like an
-// obvious short loop repeating.
+// ---------------- background music ----------------
 
-function startAmbient() {
+async function startAmbient() {
   if (ambientStarted) return;
   ambientStarted = true;
-  const now = ctx.currentTime;
-  const chord = [130.81, 164.81, 196.0, 261.63]; // C3 E3 G3 C4
-
-  chord.forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.04 + i * 0.015;
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 3;
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.detune);
-    lfo.start(now);
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 900;
-
-    const voiceGain = ctx.createGain();
-    voiceGain.gain.value = 0;
-    voiceGain.gain.setTargetAtTime(0.05, now + i * 0.6, 2.4);
-
-    osc.connect(filter);
-    filter.connect(voiceGain);
-    voiceGain.connect(ambientGain);
-    osc.start(now);
-
-    padVoices.push(osc, lfo);
-  });
-
-  scheduleTwinkle();
-  startBeat();
-}
-
-function scheduleTwinkle() {
-  const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
-
-  function playNote() {
-    if (!ambientStarted) return;
-    const t = ctx.currentTime;
-    const freq = pentatonic[Math.floor(Math.random() * pentatonic.length)];
-    const osc = ctx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.07, t + 0.06);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
-
-    const pan = ctx.createStereoPanner();
-    pan.pan.value = Math.random() * 1.6 - 0.8;
-
-    osc.connect(g);
-    g.connect(pan);
-    pan.connect(ambientGain);
-    osc.start(t);
-    osc.stop(t + 2.3);
-
-    twinkleTimer = setTimeout(playNote, 2400 + Math.random() * 3200);
-  }
-
-  twinkleTimer = setTimeout(playNote, 900);
-}
-
-// A soft plucked arpeggio + a light shaker flick, locked to a steady 92 BPM
-// 8th-note grid — this is what actually gives the ambient bed a beat, on top
-// of the sustained pad and the sparse melodic twinkle.
-const BEAT_BPM = 92;
-const STEP_SECONDS = 60 / BEAT_BPM / 2;
-const BEAT_PATTERN = [0, null, 1, null, 2, 1, null, null, 0, null, 2, null, 1, 2, null, null];
-let beatSchedulerId = null;
-let beatStepIndex = 0;
-let nextStepTime = 0;
-
-function scheduleBeatNote(time, chordIndex) {
-  const chordFreqs = [261.63, 329.63, 392.0]; // C4 E4 G4 — an octave above the pad
-  const freq = chordFreqs[chordIndex];
-
-  const osc = ctx.createOscillator();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(freq, time);
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 1500;
-
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, time);
-  g.gain.exponentialRampToValueAtTime(0.1, time + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
-
-  osc.connect(filter);
-  filter.connect(g);
-  g.connect(ambientGain);
-  osc.start(time);
-  osc.stop(time + 0.32);
-}
-
-function scheduleShaker(time, accent) {
-  const bufferSize = Math.floor(ctx.sampleRate * 0.045);
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-
-  const noise = ctx.createBufferSource();
-  noise.buffer = buffer;
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'highpass';
-  filter.frequency.value = 4200;
-
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(accent ? 0.05 : 0.026, time);
-  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
-
-  noise.connect(filter);
-  filter.connect(g);
-  g.connect(ambientGain);
-  noise.start(time);
-}
-
-function startBeat() {
-  beatStepIndex = 0;
-  nextStepTime = ctx.currentTime + 0.1;
-  beatSchedulerId = setInterval(() => {
-    // schedule any steps that fall within the next ~120ms lookahead window
-    while (nextStepTime < ctx.currentTime + 0.12) {
-      const chordIndex = BEAT_PATTERN[beatStepIndex % BEAT_PATTERN.length];
-      if (chordIndex !== null) {
-        scheduleBeatNote(nextStepTime, chordIndex);
-        scheduleShaker(nextStepTime, beatStepIndex % 8 === 0);
-      }
-      beatStepIndex += 1;
-      nextStepTime += STEP_SECONDS;
+  try {
+    if (!decodedTrackPromise) {
+      decodedTrackPromise = trackBytesPromise.then((bytes) => ctx.decodeAudioData(bytes));
     }
-  }, 25);
-}
+    const buffer = await decodedTrackPromise;
+    if (!ambientStarted) return; // stopped while loading
 
-function stopBeat() {
-  if (beatSchedulerId) clearInterval(beatSchedulerId);
-  beatSchedulerId = null;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(ambientGain);
+    source.start();
+    trackSource = source;
+  } catch (err) {
+    console.error('Background music failed to load', err);
+  }
 }
 
 export function stopAmbient() {
   ambientStarted = false;
-  if (twinkleTimer) clearTimeout(twinkleTimer);
-  stopBeat();
-  padVoices.forEach((v) => {
-    try { v.stop(); } catch { /* already stopped */ }
-  });
-  padVoices = [];
+  if (trackSource) {
+    try { trackSource.stop(); } catch { /* already stopped */ }
+    trackSource.disconnect();
+    trackSource = null;
+  }
 }
 
 // ---------------- short sound effects ----------------
