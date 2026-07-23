@@ -17,6 +17,7 @@ export function showPersonalResult(root, player, { onContinue, isLast }) {
               <div class="rank" style="color:${t.zone.color}">อันดับ ${t.rank} · ${t.zone.label}</div>
               <h4>${t.careers[0]}</h4>
               <p>${t.reason} · ตัวอย่างอาชีพอื่น: ${t.careers.slice(1).join(', ')}</p>
+              <p class="rytc-majors">มาเรียนกับเราที่วิทยาลัยเทคนิคระยอง มีสาขาที่เกี่ยวข้องกับอาชีพนี้ ดังนี้ ${(t.zone.majors || []).map((m) => `<a href="https://join.rytc.ac.th" target="_blank" rel="noopener">${m}</a>`).join(', ')}</p>
             </div>
           `).join('')}
         </div>
