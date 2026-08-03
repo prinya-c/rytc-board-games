@@ -10,7 +10,7 @@ import { showMission } from '../ui/missionModal.js';
 import { showPersonalResult, showFinalSummary } from '../ui/resultsScreen.js';
 import { playHop } from '../audio/audioEngine.js';
 
-export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: existingScene }) {
+export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: existingScene, gameMode = 'accurate' }) {
   const scene = existingScene ?? createBoardScene(sceneContainer);
   const dice = createDice();
   dice.position.set(0, 0.35, 2.4);
@@ -27,7 +27,7 @@ export function startGame({ players, sceneContainer, uiRoot, hudRoot, scene: exi
   // regardless of the exact dice faces, they're guaranteed to land on at
   // least 2 missions per EEC zone and at least 4 self-discovery missions
   // before reaching FINISH. Individual rolls still show 1-6 like real dice.
-  const diceQueues = players.map(() => generateDiceSequence().diceQueue);
+  const diceQueues = players.map(() => generateDiceSequence(gameMode).diceQueue);
 
   let currentIndex = 0;
   let busy = false;

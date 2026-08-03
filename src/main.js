@@ -54,8 +54,8 @@ audioToggle.addEventListener('click', () => {
 });
 
 renderSetupScreen(uiRoot, {
-  onStart: (players) => {
+  onStart: (players, gameMode) => {
     uiRoot.innerHTML = '';
-    startGame({ players, scene, uiRoot, hudRoot });
+    startGame({ players, scene, uiRoot, hudRoot, gameMode });
   },
 });

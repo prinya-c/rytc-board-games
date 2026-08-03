@@ -5,8 +5,20 @@ export const PLAYER_COLORS = ['#E4572E', '#3A6CF0', '#4E9E3E', '#F4B400', '#9B59
 
 const ZONE_ICONS = { dig: '💻', rob: '🤖', log: '✈️', bio: '🧪', med: '🩺' };
 
+const GAME_MODES = [
+  {
+    key: 'accurate', icon: '🎯', label: 'เล่นละเอียด', badge: 'แนะนำ',
+    rolls: 'ทอย ~11-13 ครั้ง', detail: 'ผลแม่นยำกว่า ครบทุกด้าน',
+  },
+  {
+    key: 'fast', icon: '⚡', label: 'เล่นเร็ว', badge: '',
+    rolls: 'ทอย ~6-8 ครั้ง', detail: 'ผลแม่นยำน้อยกว่า',
+  },
+];
+
 export function renderSetupScreen(root, { onStart }) {
   let count = 1;
+  let gameMode = 'accurate';
 
   function defaultPlayers(n) {
     return Array.from({ length: n }, (_, i) => ({
@@ -38,6 +50,8 @@ export function renderSetupScreen(root, { onStart }) {
           <h1>ตะลุยโลกอาชีพ</h1>
           <p class="subtitle">ค้นหาว่าคุณเหมาะกับอาชีพใดในอนาคต ผ่านการผจญภัย 32 ช่อง ครบ 5 อุตสาหกรรมแห่งอนาคตของ EEC</p>
 
+          <div class="mode-row" id="mode-row"></div>
+
           <div class="player-count-row" id="count-row"></div>
           <div class="player-form" id="player-form"></div>
 
@@ -45,6 +59,28 @@ export function renderSetupScreen(root, { onStart }) {
         </div>
       </div>
     `;
+
+    const modeRow = root.querySelector('#mode-row');
+    modeRow.innerHTML = GAME_MODES.map((m) => `
+      <label class="mode-card ${gameMode === m.key ? 'active' : ''}" data-mode="${m.key}">
+        <input type="radio" name="game-mode" value="${m.key}" ${gameMode === m.key ? 'checked' : ''} />
+        <span class="mode-top">
+          <span class="mode-icon">${m.icon}</span>
+          <span class="mode-label">${m.label}</span>
+          ${m.badge ? `<span class="mode-badge">${m.badge}</span>` : ''}
+        </span>
+        <span class="mode-rolls">${m.rolls}</span>
+        <span class="mode-detail">${m.detail}</span>
+      </label>
+    `).join('');
+    modeRow.querySelectorAll('.mode-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        if (gameMode === card.dataset.mode) return;
+        playTick();
+        gameMode = card.dataset.mode;
+        render();
+      });
+    });
 
     const countRow = root.querySelector('#count-row');
     countRow.innerHTML = [1, 2, 3, 4].map((n) => (
@@ -116,7 +152,7 @@ export function renderSetupScreen(root, { onStart }) {
           position: 1,
           score: { dig: 0, rob: 0, log: 0, bio: 0, med: 0 },
           finished: false,
-        })));
+        })), gameMode);
       });
     }
   }

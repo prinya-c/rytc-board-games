@@ -166,6 +166,38 @@
 }
 
 /* -------- player setup -------- */
+.mode-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.mode-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid #E7E1D2;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+.mode-card input { position: absolute; opacity: 0; pointer-events: none; }
+.mode-card.active {
+  border-color: var(--path);
+  background: var(--path-soft);
+}
+.mode-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.mode-icon { font-size: 15px; }
+.mode-label { font-weight: 800; font-size: 13.5px; }
+.mode-badge {
+  font-size: 10px; font-weight: 700; color: var(--path);
+  background: rgba(255, 255, 255, 0.7); border-radius: 999px; padding: 1px 7px;
+}
+.mode-rolls { font-size: 11.5px; font-weight: 600; color: #6b6255; }
+.mode-detail { font-size: 11px; color: #9a9182; }
+
 .player-count-row {
   display: flex;
   gap: 8px;

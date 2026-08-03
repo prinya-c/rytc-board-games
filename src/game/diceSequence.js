@@ -1,14 +1,16 @@
 // Generates a per-player sequence of "dice roll" values that is fully
 // pre-determined, but statistically indistinguishable from a real 1-6 roll
-// at each individual step. The sequence is engineered so that, over the
-// course of a game, the player is guaranteed to land on at least 2 cells
-// per EEC zone and at least 4 self-discovery (type 'A') cells, then finish
-// exactly on cell 32 — without ever needing a single step larger than 6.
+// at each individual step. Two modes:
+//  - 'accurate' (default): guarantees ≥2 cells per EEC zone and ≥4
+//    self-discovery (type 'A') cells before finishing — ~11-13 rolls.
+//  - 'fast': guarantees only ≥1 cell per zone (no type-A minimum) — ~6-8
+//    rolls, trading result accuracy for a shorter game.
+// Either way the player always finishes exactly on cell 32, never needing
+// a single step larger than 6.
 import { CELLS, BOARD_SIZE } from './cells.js';
 import { ZONE_ORDER } from './zones.js';
 
 const MAX_DIE = 6;
-const MIN_PER_ZONE = 2;
 const BONUS_RANGE = [0, 2]; // extra random cells added for natural variance
 
 function cellsByZone() {
@@ -40,7 +42,48 @@ function pickOneFromEachHalf(all) {
   return [a, b];
 }
 
-function pickTargetCells() {
+function randInt(lo, hi) {
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
+}
+
+/** Fast mode: walk zone by zone, picking one cell per zone from whatever
+ * range is still reachable (≤6 away) from the previous pick. Because every
+ * zone is exactly 6 cells wide — the same as the max die face — that range
+ * is always non-empty, so this never needs the gap-repair fallback. */
+function pickFastModeCells() {
+  const zoneCells = cellsByZone();
+  let current = 1;
+  const picks = [];
+  for (const zone of ZONE_ORDER) {
+    const cells = zoneCells[zone];
+    const zoneStart = cells[0].id;
+    const zoneEnd = cells[cells.length - 1].id;
+    const lo = Math.max(zoneStart, current + 1);
+    const hi = Math.min(zoneEnd, current + MAX_DIE);
+    const pick = randInt(lo, hi);
+    picks.push(pick);
+    current = pick;
+  }
+
+  // Optional bonus cells (0-2), only added if they keep every gap ≤6.
+  const bonusCount = randInt(BONUS_RANGE[0], BONUS_RANGE[1]);
+  const used = new Set(picks);
+  const candidates = shuffle(CELLS.filter((c) => ZONE_ORDER.includes(c.zone) && !used.has(c.id)));
+  for (const cand of candidates) {
+    if (picks.length - ZONE_ORDER.length >= bonusCount) break;
+    if (used.has(cand.id)) continue;
+    const test = [...picks, cand.id].sort((a, b) => a - b);
+    const fits = test.every((id, i) => i === 0 || id - test[i - 1] <= MAX_DIE);
+    if (fits) {
+      picks.push(cand.id);
+      used.add(cand.id);
+    }
+  }
+
+  return picks.sort((a, b) => a - b);
+}
+
+function pickAccurateModeCells() {
   const zoneCells = cellsByZone();
   const selected = new Set();
 
@@ -105,9 +148,11 @@ function repairGaps(path) {
 
 /** Builds { path, diceQueue } for one player: path is the sorted list of
  * cell ids they will land on (always ending at BOARD_SIZE), diceQueue is
- * the matching list of 1-6 step sizes to reveal on each roll. */
-export function generateDiceSequence() {
-  const targets = pickTargetCells().filter((id) => id < BOARD_SIZE);
+ * the matching list of 1-6 step sizes to reveal on each roll.
+ * `mode`: 'accurate' (default, ~11-13 rolls) or 'fast' (~6-8 rolls). */
+export function generateDiceSequence(mode = 'accurate') {
+  const targets = (mode === 'fast' ? pickFastModeCells() : pickAccurateModeCells())
+    .filter((id) => id < BOARD_SIZE);
   const path = repairGaps([1, ...targets, BOARD_SIZE]);
   const diceQueue = [];
   for (let i = 1; i < path.length; i += 1) {
